@@ -12,8 +12,6 @@ public class Ajmorton implements Player, Piece{
 	
 	public Board board;
 	
-		
-	
 	public int init(int n, int p) {
 		/* This function is called by the referee to initialise the player.
 		 *  Return 0 for successful initialization and -1 for failed one.
@@ -36,12 +34,6 @@ public class Ajmorton implements Player, Piece{
 		
 	}
 
-	
-	
-	
-	
-	
-	
 	public Move makeMove() {
 		//TODO
 		/* Function called by referee to request a move by the player.
@@ -50,9 +42,6 @@ public class Ajmorton implements Player, Piece{
 		
 		return null;
 	}
-
-	
-	
 	
 	public int opponentMove(Move m) {
 		
@@ -61,15 +50,12 @@ public class Ajmorton implements Player, Piece{
 		 */
 		
 		if(board.isLegal(m, boardSize) == 0){
-			board.updateBoard(m);
+			Update.updateBoard(m, board);
 			return 0;
 		}
 		
 		return -1;
 	}
-
-	
-	
 	
 	public int getWinner() {
 	//TODO
@@ -79,10 +65,6 @@ public class Ajmorton implements Player, Piece{
 		
 		return 0;
 	}
-
-	
-	
-	
 	
 	public void printBoard(PrintStream output) {
 	//TODO

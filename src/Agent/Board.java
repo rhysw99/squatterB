@@ -5,15 +5,25 @@ import aiproj.squatter.Piece;
 
 import java.awt.Point;
 
+
 public class Board{
 
-	private int[][] board;
-	private int boardSize;
+	private int[][] board;			//the game board
+	private int[][] explored;		//has pathfind explored which cell
+	private int[][] scoreMap;		//best next move for pathfind
+	
+	private int     boardSize;
+	private int		maxScore;		// max score of the score map function
 	
 	/* BUILDER */
 	public Board(int boardSize){
 		this.boardSize = boardSize;
-		this.board = new int[boardSize][boardSize];
+		this.board     = new int[boardSize][boardSize];
+		this.explored  = new int[boardSize][boardSize];
+		this.maxScore  = genMetadata(boardSize);
+		
+		
+			
 	}
 	
 	
@@ -22,118 +32,14 @@ public class Board{
 	
 	/* GETTER */
 	public int getCell(Point point)	{return this.board[point.y][point.x];}
-
+	public int getBoardSize()		{return boardSize;}
+	public int getMaxScore()		{return maxScore;}
+	
+	public int[][] getBoard()		{return board;}
+	public int[][] getScoreMap()	{return scoreMap;}
+	public int[][] getExplored()	{return explored;}
 
 	
-	/* METHODS */
-	public void updateBoard(Move newMove){
-		// TODO
-		
-		board[newMove.Row][newMove.Col] = newMove.P;
-		
-		// find pathfinding start points
-			
-		int top  = (newMove.Row <= boardSize/2) ? -1:1;
-		int left = (newMove.Col <= boardSize/2) ? -1:1;
-		
-		Point centerCell   = new Point(newMove.Col,        newMove.Row);
-		Point startCell    = new Point(newMove.Col + left, newMove.Row + top);
-		
-		Point ptrClockwise = new Point(startCell);
-		Point ptrCounter   = new Point(startCell);
-		
-		// can path from startCell, else path from next available cell
-		// if no paths are possible, end
-		if(board[startCell.y][startCell.x] != newMove.P){
-			pathfind(startCell);
-		}else{
-			ptrClockwise = nextCell(ptrClockwise, centerCell, true);
-			while(board[ptrClockwise.y][ptrClockwise.x] == newMove.P){
-				ptrClockwise = nextCell(ptrClockwise, centerCell, true);
-				if(ptrClockwise == ptrCounter) {return;}
-			}
-			pathfind(ptrClockwise);
-		}
-		
-		// move pointer clockwise until blocked
-		while(board[ptrClockwise.y][ptrClockwise.x] != newMove.P){
-			ptrClockwise = nextCell(ptrClockwise, centerCell, true);		//magic number
-		}
-
-		//move pointer counterclockwise until blocked
-		while(board[ptrCounter.y][ptrCounter.x] != newMove.P){
-			ptrCounter = nextCell(ptrCounter, centerCell, false);		//magic number
-		}
-		
-		// no more cells to check
-		boolean newPath = true;
-		
-		while(ptrClockwise != ptrCounter){
-			if(newPath &&(board[ptrClockwise.y][ptrClockwise.x] != newMove.P)){
-				pathfind(ptrClockwise);
-				newPath = false;
-			}else if(!newPath && (board[ptrClockwise.y][ptrClockwise.x] == newMove.P)){
-				newPath = true;
-			}
-		}
-		
-		return;
-		
-		// TODO
-		// consider Points not in board range
-		
-		// look over start point detections
-		// in particular if startCell is necessary, can't be replace by ptrCounter
-		
-		/* outline
-		start path from startCell (if possible)
-		otherwise continue clockwise until a start point is reached
-		when ptrClockwise and ptrCounter overlap boardUpdate is finished
-		pointer 1 goes clockwise until blocked
-		pointer 2 goes counter clockwise till blocked
-		
-		ptrClockwise continues till not player cell
-		sets cell as next path begin
-		repeats till ptr's overlap
-		*/
-		
-	}
-
-	private void pathfind(Point startPath) {
-		
-		
-		
-	}
-
-	
-	
-	private Point nextCell(Point currCell, Point centerCell, boolean clockwise){
-		// TODO	
-		// consolidate into fewer cycles, messier code
-		if(clockwise){
-			boolean topLeft     = (currCell.x <= centerCell.x) && (currCell.y <  centerCell.y);
-			boolean topRight    = (currCell.x >  centerCell.x) && (currCell.y <= centerCell.y);	
-			boolean bottomRight = (currCell.x >= centerCell.x) && (currCell.y >  centerCell.y);
-			boolean bottomLeft  = (currCell.x <  centerCell.x) && (currCell.y >= centerCell.y);
-			
-			if      (topLeft)     return (new Point(currCell.x + 1, currCell.y    ));
-			else if (topRight)    return (new Point(currCell.x    , currCell.y - 1));
-			else if (bottomRight) return (new Point(currCell.x - 1, currCell.y    ));
-			else if (bottomLeft)  return (new Point(currCell.x    , currCell.y + 1));
-			
-		}else if(!clockwise){
-			boolean topLeft     = (currCell.x <  centerCell.x) && (currCell.y <= centerCell.y);
-			boolean topRight    = (currCell.x >= centerCell.x) && (currCell.y <  centerCell.y);	
-			boolean bottomRight = (currCell.x >  centerCell.x) && (currCell.y >= centerCell.y);
-			boolean bottomLeft  = (currCell.x <= centerCell.x) && (currCell.y >  centerCell.y);
-			
-			if      (topLeft)     return (new Point(currCell.x    , currCell.y - 1));
-			else if (topRight)    return (new Point(currCell.x - 1, currCell.y    ));
-			else if (bottomRight) return (new Point(currCell.x    , currCell.y + 1));
-			else if (bottomLeft)  return (new Point(currCell.x + 1, currCell.y    ));
-		}
-		return new Point(-1,-1);	//ERROR - technically unreachable
-	}
 	
 	
 	public int isLegal(Move newMove, int boardSize){
@@ -144,10 +50,59 @@ public class Board{
 		boolean canPlace = (this.board[newMove.Col][newMove.Row] == Piece.EMPTY); 
 		
 		if(onBoardX && onBoardY && canPlace){
-			updateBoard(newMove);
+			Update.updateBoard(newMove, this);
+			
 			return 0;
 		} else {
 			return -1;
 		}
 	}
+	
+	
+	private int genMetadata(int boardSize){
+		// populates the score map
+		// TODO check the maths on this one
+		
+		int maxValue, i, j;
+		int isEven;
+		float vertScore, horiScore;
+		
+		for(i = 0; i<boardSize; i++){
+			for(j = 0; j<boardSize; j++){
+				explored[i][j] = 0;
+			}
+		}
+		
+		
+
+		//find max value of score map function
+		// score is essentially manhattan distance from center of board
+		if(boardSize%2 == 0){ 	//if even
+			maxValue = boardSize - 3;
+			isEven = 1;
+		}else{
+			maxValue = boardSize - 2;
+			isEven = 0;
+		}
+		
+		
+		for(i = 0; i<boardSize; i++){
+			for(j = 0; j<boardSize; j++){
+				if( j == 0 || i == 0 || i == boardSize - 1 || j == boardSize - 1){
+					scoreMap[i][j] = maxValue;											
+				}else{
+					vertScore = Math.abs((float)(boardSize - 1)/2 - i);
+					horiScore = Math.abs((float)(boardSize - 1)/2 - j);
+					scoreMap[i][j] = (int)(vertScore + horiScore - isEven); 
+				}
+			}
+		}
+		return maxValue;
+	}
+
+
+
 }
+
+
+
