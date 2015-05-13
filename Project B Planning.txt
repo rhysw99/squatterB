@@ -1,0 +1,695 @@
+Minimax leads to not losing, doesn’t lead to winning
+
+Unavoidable captures
+	- can states be established where opponent cannot prevent a capture?
+	  i.e. dual loops
+
+
+	Can use recursion to ignore pointers to parents
+		may cause problems with respect to alpha beta
+		alpha beta back in play as ply-depth will not be enough to consider 
+		local minimums
+
+Deep learning algorithms
+	guest lecture slide 24
+
+
+Top level
+	- track number of player moves
+	- multithreading? - keep track of time, update best move once per level explored
+	  and then pass out final value just before timeout
+	
+
+
+Minimising the decision tree
+	- alpha-beta pruning
+	
+	- rotation/ mirror matching
+		will require a transformation matrix for board updates
+	
+	- Path independence
+	  number of paths to a unique state == (no. black pieces! * no. white pieces!)
+	  Ties into rotation/ mirror matching see below
+
+	- is alpha beta pruning beneficial? 
+		alpha beta reduces information in the system, may miss optimal path due to
+		local minimums
+	
+		Local minimums —> a move allows for the opponent to score in order to set
+				  up a larger player score. Is this likely/possible?
+
+	- can opponents moves be predicted? if so a depth first component can be added to
+	  future decision prediction. Additionally, knowing how deep the opponent predicts
+	  may allow for “riskier” moves. 
+	  i.e. moving down a node with a lower minimax score, but being able to prevent
+	  the opponent from choosing that worst case path
+
+	
+
+Updating the board state
+	- flood fill, see below
+	
+	- relevant concepts are edge detection and cycle detection. 
+	  All part of graph theory
+
+	- a captured cell is one where there is no path to the edges
+
+
+
+The nodes class contents
+	- a 2d array of the board
+	- two arrays that list the coordinates of placed pieces, one for black, one for
+	  white.
+	- tree level, rather than a simple counter of all the levels above, make it 
+	  n^2 - number of free cells, therefore a capture is like skipping a number
+	  of levels proportional to the number of captured cells
+	- pointers to child nodes
+	- pointers to parent nodes
+
+
+node class contents v2
+	- remove the 2d array of the board, have one board at the root and only list new
+ 	  moves in the branches, with a second board to track he changes 
+	- level, the number of uncaptured cells, gives an indication of the number of
+	  nodes in each subsequent level.
+	- black/white cell arrays, there is no need to compare cells common to all nodes,
+	  only the differences as such each move can pop the first value from the array
+	- pointers other parent/child nodes
+
+
+Node Size
+	- 2D array of objects	—> n^2 * sizeof({cell object})
+	- tree level		—> sizeof(int)
+	- black/white arrays	—> sizeof(blackArray) + sizeof(whiteArray)
+	  			   varies w/ tree depth - need more info on sizeof in java
+	- pointers to child nodes
+				pointers will be smaller than black/white arrays, likely
+				negligible in terms of size
+	- pointers to parent nodes?
+
+
+Tree composition
+	- linked list? 
+
+
+
+Program constraints
+	- time, the timeout set by the game coordinator.
+		try to use all time allotted in each turn.
+		
+		Probably will have to predict how much time the minimax will take and work
+		up until that point then calculate and return result.
+		
+		Can output be stored but not passed out? then a simple timer at the top
+		level can allow for tree building right up to the timeout.
+		
+		Regardless, a prediction for the time taken to populate each tree level
+		will be required.
+
+		Does program pause when it’s not the player turn? could set decision tree
+		population to operate during the opponents turn as well
+
+		Save time with cumulative forward prediction, see below
+
+	- space, set by assignment specifications
+		objects will take more space than simple arrays etc. 
+		
+		may lead to conflict between design principles and space optimisation
+
+		Space is more likely to be the defining constraint, wait till project 
+		specs are out to determine.
+
+		Assuming a pre calculated tree is pruned down to the bare essentials (only
+		one player move for each state) even with nodes of only 100 bytes the 6x6
+		board is quickly approaching multiple megabytes
+
+		memory management, what is generating the decision tree outstrips the
+		available space? could be a big problem
+		
+	- tradeoffs, 
+
+	  	to reduce node size but increase time a board could be kept, with
+	  	each branch being an instruction sent to the board. moving down a branch
+		would follow the instruction, where moving up would simply et the square
+		back to uncaptured. This would also affect the transformation matrix (see 		similar state detection).
+
+Working within the limits
+	- looks like we only have access to half of the allocated memory/time, so 500kb
+	  and 7.5 seconds over the entire game.
+	
+	- will have to limit the depth of the decision tree based on available memory
+
+	- as the game progresses, the number of branches decreases proportional to the
+	  number of free cells. roughly the number of nodes in each level is n^2 - d,
+	  where n is the boardSize and d s the depth.
+
+	- with node size of 77.7 bytes each, it is possible to generate all possible paths
+	  within 1 MB from 16 spaces before the end of the game.
+			(16!)/(8!*8!) = 12,870 nodes from the root. 
+	  Effectively, the algorithm can be omniscient 16 turns before the games end.
+	  
+	- Number of nodes (after branch merging) from level SL down to level El is:
+	  (SL!/EL!)/(((SL-EL)/2)! * (SL - (SL-EL)/2)!), 
+	  where SL is the starting level, EL is the end level.
+	  Program will become increasingly knowledgeable as turns progress 
+	  (able to consider a greater percentage of paths)
+
+	- once the exact size of each node is known (in bytes, it changes with each level)
+	  the above algo can be refined.
+
+
+Heuristics for board scoring
+	- Simplest heuristic is (player score - opponent score)
+	- anything else possible without a large step up in complexity?
+	
+Next move selection
+	- monte Carlo, may make branch merging relatively irrelevant
+	- killer heuristic	not a fan, seems unreliable 
+
+	- perhaps two different algos for early and late game?
+	  make a simple, quick selection for the top levels and a more informed, 
+	  comprehensive selection for the end game. 
+
+
+Machine learning 
+	- currently the program is not prioritised, considering all possible paths with
+	  not selection criteria. There is space for a depth/breadth combination search
+	  (searching the most likely node the deepest and each less likely node slightly
+	  shallower).
+
+	- Machine learning would of course have to take up some memory, already a possibly
+	  limited resource.
+
+	- Machine learning can only be used against the opponents we are playing against,
+	  this means at best it can only be implemented when others have a finished
+	  product and if they submit their finished program to a communal testing ground
+
+	- Conspiracy theory time, what if others submit an intentionally bad AI to the
+	  testing grounds resulting in detrimental machine learning?
+
+	- Overall I think machine learning is something to consider in the very late
+	  stages, and even then most likely not tot use.
+	
+	- Michie - MENACE Tic Tac Toe algorithm
+	  shorttermmermoryloss.com/menace
+
+
+
+          === ============================================================== ===           
+           === ===                                                     ==== ===         
+            === ===    History Independent Pathing / Branch Merging   ==== ===      
+             === ===                                                 ==== ===      
+              === ====================================================== ===   
+
+	   1a		   1b		   1c		   1d		   1e
+	B - - -		B - - -		B B - -		B B W -		B B W -		
+	- - - -		- W - -		- W - -		- W - -		- W - -		
+	- - - -		- - - -		- - - -		- - - -		B - - -		
+	- - - -		- - - -		- - - -		- - - -		- - - -		
+
+	   2a		   2b		   2c		   2d		   2e
+	- B - -		- B W -		- B W -		- B W -		B B W -		
+	- - - -		- - - -		- - - -		- W - -		- W - -		
+	- - - -		- - - -		B - - -		B - - -		B - - -		
+	- - - -		- - - -		- - - -		- - - -		- - - -		
+
+
+Compare the two game progressions above, both end at the same state (1e == 2e), but
+a different path is taken in each game. Clearly the same game state can be reached 
+through multiple paths. As the history of the game has no influence on future actions 
+(currently and most likely definitely) the two states from different branches can be 
+merged into a single branch.
+
+
+MATHS	/// expand on later
+The number of paths available is (B!)*(W!), where B == no. black tiles and W == no. white tiles.
+
+There are B! sequences that the black pieces can be placed on the board in, and W! 
+sequences that the white pieces can be placed. The two are independent (multiplied 
+rather than summed and factorialised) as players take turns placing pieces.
+
+
+
+Applying this to the game results in a possible tree shrinking factor of:
+
+tree level:	factor reduction:
+	 1		    1
+	 2		    1
+	 3		    2
+	 4		    4
+	 5		   12
+	 6		   36
+	 7		  144
+	 8		  576
+	 9		 2880
+	10		14400
+
+leading to end state values for game boards
+
+*** maths is slightly off, idea still stands
+    
+   board size	reduction factor 	Without merging states		after merging
+	25	2.98 E 18		1.55 E  25			5.21 E  5
+	36	4.10 E 31		3.72 E  41			9.07 E  9
+	49	9.62 E 48		6.08 E  62			6.32 E 13
+	64	6.92 E 70		1.26 E  89			1.83 E 18
+	81	2.73 E 97		5.79 E 120			2.12 E 23
+
+by combining all similar states across all branches (ie. multiple states in level 3 point 
+to a single state in level 4) these values can be reached. These values are actually 
+underestimations as more reducing factors (capturing squares removes them from play, 
+rotations and reflections can also be merged) will reduce the number of states further.
+
+
+
+
+          = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+          = ================================================================= =          
+          = ||||                Similar state detection                  |||| =
+          = ================================================================= =          
+          = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
+
+track for both black and white a coordinate list (same as in pro A)
+
+i.e
+
+the node
+
+B - -
+- W -
+- W -
+
+also includes information
+B: [(0,0)]
+W: [(1,1), (2,1)]
+
+this will increase size by up to a factor of 2, but the the number of reduced branches 
+will counter this increase in size easily and have increasing returns as it the game 
+goes on.
+
+#######changed in node v2###########
+
+
+The size increase will be largest at the end game, which may cause problems
+
+
+
+rotation and reflection state detection
+
+take the array
+
+1 2 3		 	[y, x] == [y, x]	
+4 5 6		 
+7 8 9		
+		
+
+it can be represented by reflections
+
+vertical line	
+3 2 1			[y, x] == [y, (n-1) - x]
+6 5 4		 
+9 8 7		
+		
+horizontal line	
+7 8 9			[y, x] == [(n-1) - y, x]
+4 5 6		
+1 2 3		
+
+major diagonal \	
+1 4 7			[y, x] == [x, y] 
+2 5 8			
+3 6 9			
+
+minor diagonal /
+9 6 3 			[y, x] == [(n-1) - x ,(n-1) - y]
+8 5 2
+7 4 1
+
+
+rotations
+
+90 degrees		
+7 4 1			[y, x] == [x,(n-1) - y]
+8 5 2			
+9 6 3	
+
+180 degrees
+9 8 7			[y, x] == [(n-1) - y, (n-1) - x]
+6 5 4		
+3 2 1		
+		
+270 degrees
+3 6 9			[y, x] == [(n-1) - x, y]
+2 5 8
+1 4 7
+
+
+
+The complexity of this algorithm is O(B + W) where B is the number of black pieces on 
+the board and W is the number of white pieces. There is no need to consider the 
+blank/captured cells as the relevant information is the black/white pieces only 
+(the number of which is constrained by the tree level)
+
+The merging of board states that are not unique, but with different 
+rotations/reflections will mean that a transformation matrix will be required 
+between receiving the cell coordinates from outside the program and placing them 
+into the board in the decision tree. 
+The rotation matrix will likely get longer with each step but it may be possible 
+to combine steps using further analysis.
+
+ - Is transformation order independent?
+
+
+
+
+
+
+Similar state detection in an branch-merged tree
+
+if the decision tree were ideal, no each branch simply fanned out to new nodes, then a
+top down similar state detection could be used. compare the comparison node with a top level node, if there is no match for the cells in the top level node, than all child nodes
+must be unique to the comparison node. 
+
+This does not work as well for merged branches, as branches get more and more intertwined
+the top level nodes will tend towards leading to all paths. However, the similar state is performed on each new node, so only the first similar state has to be found, a depth first approach makes this irrelevant. That is, many paths may lead to the same node but only one path needs to travelled to reach the node.
+
+similar state cannot point to itself as the node is only added after the search.
+
+Works well if a similar state exists in the tree, however if the new node is a unique state then the full tree must be traversed. With intertwined branches it is likely that the many paths a traversed multiple times, making the worst case larger than the sumner of nodes in the tree.
+
+
+
+
+
+    //////  //////      //////  ///////////    \\\\\\\\\\\  \\\\\\\      \\\\\  \\\\\\   
+       //      //    //////                                    \\\\\\\    \\     \\      
+    ||||    ||||      ||||     Cumulative forward prediction    ||||      ||||    ||||    
+      \\\      \\    \\\\\\                                    ///////    //      //      
+    \\\\\\  \\\\\\      \\\\\\  \\\\\\\\\\\\  ////////////  ///////      //////  /////   
+
+Each time that the opponent places a piece, we pass the resulting node forward to 
+the next step as the zero node.
+
+
+	      tree before opponents move
+
+		          a
+
+
+		    b	        c
+
+
+		 d     e     f     g
+
+		h i   j k   l m   n o
+	          
+
+
+
+		  opponent chooses b
+
+		          a
+
+
+		   (b)	        c
+
+
+		 d     e     f     g
+
+		h i   j k   l m   n o
+
+
+
+
+   		  now root node is b
+
+			    b
+
+        	         d     e
+
+			h i   j k
+
+
+Allows for maximum use of allotted time in each turn processing the tree further 
+even after the next move is determined, or perhaps working down to the wire and only 
+returning the next cell barely before the timeout is triggered. Work can be cumulative 
+allowing for more work put into deeper nodes performed by the earlier turns, giving 
+deeper insight in the later game. Will optimise for larger boards.
+
+
+
+
+
+
+***     ***     ***     *****************************************     ***     ***     *** 
+  ***     ***     ***     ***                                ***     ***     ***     ***  
+   ***     ***     ***     ***   Updating the Board State   ***     ***     ***     *** 
+  ***     ***     ***     ***                                ***     ***     ***     ***  
+ ***     ***     ***     ****************************************     ***     ***     ***
+
+
+Flood Filling
+
+S S S S S S S S S S
+S - - B B B - - - S
+S - B + + + B - - S
+S - B + + B - - - S
+S - - B B - - - - S
+S - - W W - - - - S
+S - W + + W - - - S
+S W + + + + W - - S
+S - W W W W - - - S
+S S S S S S S S S S
+
+
+establish a list of cells to begin a path finding search from, in this case all cells 
+labeled S, they will be rows -1 and n, and columns -1 and n.
+
+use pathfinding for each player, where if searching for black captures then the search
+path can’t cross a boundary that is block by Black pieces. for example in the below situation 
+the path finding cannot move left (blocked by a black captured cell), up (same) or diagonally 
+up and left (as the are black cells adjacent to both the reference cell and the possible 
+next cell).
+
+- B -
+B C -
+- - -
+
+
+This, when finished will mean that the only cells not accessed by the path finding algorithm 
+are those that are in a captured loop. Iterating though this to update to captured cells 
+(provided they aren’t the player own cells) will be a relatively simple way to update the 
+board correctly
+
+
+
+
+
+
+
+
+
+Blooming Flood Fill
+
+for each new cell placed, flood fill is initiated on all adjacent places, if a path to the
+edges is found, then there is no loop on that side of the new piece. if the updating 
+algorithm is optimised to look first for the closest edges then while O is still roughly 
+n^2 the best performance may be roughly n/2
+
+This of course requires that a progressive score is kept for each level, adding another 
+level of processing to the decision tree. Updating can be skipped for the first 6 levels as no captures are possible until level 7 (4 pieces to capture, level 6 has 3 black and 3 white on the board).
+
+
+optimising:
+move towards the edges
+	if the selected cell is [2,1], then first look to [2,0] (the closest edge), then
+ 	maybe [1,1] as it is moving towards the closest corner.
+
+	the optimal path may be a sort of manhattan (with diagonal) distance 
+	to the nearest edge.
+
+adjacent paths
+	if two starting points (say N and NE) are both non capturing player cells 
+	(that flood fill would progress from one cell to another) then they can be
+	assumed to share the same path to an edge. The max number of paths that may 
+	need to be checked is 4.
+	
+	B - B
+	- S -
+	B - B
+
+
+	It is possible that two paths merge later on ie.
+
+	- - - - - - -
+	- - - — - - -
+	- B - B - B -
+	- B - S B B -
+	- B - - - B -
+	- - B B B - -
+	- - - - - - -
+
+	Where there are two paths, one moving NW from S (start) and the other taking
+	any other direction bar N or E.
+	
+	The additional size is only O(n^2), nothing compared to the size of the decision
+	tree, but it is likely that the the continual comparison between the two 
+	paths will be more than the cost of calculating the two paths ignoring overlaps.
+	
+	Come back to this later.
+
+Overall
+	overall the expected case for each path taken from start is either the shortest
+	path an edge, or the number of cells in a captured loop.
+
+
+
+
+Comparing Blooming Flood Fill to Outside-in Flood fill
+
+With optimisation blooming flood fill is clearly better, for example the first move on 
+the board the update would take (n+1)^2 for default (comparing all cells and starting 
+from the outside), whereas blooming flood fill is n/2 (taking the shortest path to an edge). 
+
+I think Blooming Flood fills worst case is still O(n^2), but the average case is likely to 
+be along the lines of (n^2)/x, where x is whatever. The point is that bloom has a better 
+best case, a better average case, and a better worst case.
+
+
+		Default Flood Fill		Blooming flood fill
+worst		     (n+1)^2			      n^2
+
+average		     (n+1)^2			      (n^2)/x
+
+best		     (n+1)^2			       1
+
+
+The benefits of Outside in flood fill are that it allows for board updating to skip levels, bloom is quicker individually but requires that scores from past states 
+are passed forward. 
+
+To pass forward these values the board update must be done on each level of the decision tree. 
+
+Outside in is history independent, and can be performed at any level independent of past level calculations, this means that theoretically you could only update the board 
+every 3 or 4 levels, reducing the number of operations for every level of the tree.
+
+This will cause problems if the board state end prematurely though. For example, if the board 
+is finished in 20 turns (5x5 board with 5 captures) the decision tree may not update these 
+captures in time for the board to end. The decision tree calculates down to level 25 and does not see that the game is over.
+
+
+
+
+
+
+  ******    ******    **********************************************     ******    ******
+ ***  ***  ***  ***  ***   ***                               ***  ***  ***  ***  *** ***
+***   ******    ******     ***   Number of nodes to build    ***    ******    ******   ***
+ ***  ***  ***  ***  ***   ***            (size)             ***  ***  ***  ***  *** ***
+  ******    ******    **********************************************     ******    ******
+
+################################
+1000 bytes per kilobyte?
+################################
+
+size allocated: given at start of game	maybe hardcoded
+time allocated:	given at start of game	maybe hardcoded
+
+node size:	size = (no. pieces placed) + base size
+		
+		base size is the board, as it’s size shouldn’t change
+		no.pieces placed can be updated on every call from the game manager
+
+
+Number of Nodes between each level:
+
+root node is number n^2 <— refers to number of branches from node
+each level below decrements by one, unless a capture is made, then the level is decremented by 1 + no. captures
+
+level is equivalent to number of free spaces left on board.
+
+
+number of nodes between Start level and end level
+
+			(SL!/EL!)/(((SL-EL)/2)! * (SL - (SL-EL)/2)!), 
+
+note, doesn’t account for reflect/rotation reduction
+
+
+average size of nodes between start level and end level
+    		       (L = EL)
+			sigma   (L*sizeof(L))/(SL!/EL!) 
+		       (L = SL)
+
+
+product of these is the size in memory for all nodes between SL and EL, the problem is that sizeof(L) is not directly related to EL or SL. It is proportional to number of pieces placed on the board, while SL/EL are dependent on the number of free spaces on the board.
+The difference between these is the number of captured cells.
+
+
+
+
+
+
+
+
+
+
+  ******    ******    *****======================================***     ******    ******
+ ***  ***  ***  ***  ***   ***                                ***  ***  ***  ***  *** ***
+***   ******    ******     ***   Number of nodes to build   ***     ******    ******   ***
+ ***  ***  ***  ***  ***   ***            (time)              ***  ***  ***  ***  *** ***
+  ******    ******    *****======================================***     ******    ******
+
+
+Have to allow time for minimax back to root, although as scores are already calculated it should just be a simple min(leaves in path) for each branch from root
+
+Much more complex
+
+if write speed of server is significant (>100MB per second for SSD) then timing may be irrelevant to consider
+
+Clock speed of servers?
+
+
+follow average case —> risky
+follow worst case   —> likely inefficient
+follow best case    —> guaranteed timeouts  
+
+
+worst case
+		no. cycles < L!*(no.pieces)*timeCaptureFind
+
+
+
+
+
+
+
+
+
+
+
+
+
+Major problems
+	- Size constraints are ___SEVERE___
+	- Transformation matrix running back up tree
+	- similar state detection when searching a unique state (O(size tree))
+	- time constraints 
+	- 
+
+
+
+
+Questions for Lida
+
+	- previous year results —> minimax will tend towards (0,0) draws
+	- reference sizing
+	
+	- Server clock speed
+	
+
+
+
+
+
+
