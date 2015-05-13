@@ -157,8 +157,8 @@ public class Update {
 		// indexed in static list by score of possible next cell
 		// board is scored so that cells can be scored between 0 and maxScore 
 		// so that static array is as small as possible
-		ArrayList<DoublePoint>[] nextCell = (ArrayList<DoublePoint>[]) new ArrayList[maxScore];
-		for(i = 0; i < maxScore; i++){
+		ArrayList<DoublePoint>[] nextCell = (ArrayList<DoublePoint>[]) new ArrayList[maxScore + 1];
+		for(i = 0; i <= maxScore; i++){
 			nextCell[i] = new ArrayList<DoublePoint>();
 		}
 		
@@ -176,6 +176,7 @@ public class Update {
 		
 		//add finished cell to explored list
 		exploredList.add(startPath);
+		explored[(int)startPath.getY()][(int)startPath.getX()] = 1;;
 		
 		//explore cells around
 		// TODO fix nulls
@@ -203,6 +204,7 @@ public class Update {
 						newPointPair.setNewCell(nextPosCell);
 						newPointPair.setPrevCell(currCell);
 						nextCell[cellScore].add(newPointPair);
+						explored[(int)nextPosCell.getY()][(int)nextPosCell.getX()] = 1;
 
 					}
 				}
@@ -229,17 +231,20 @@ public class Update {
 					// there are moves with score i to try
 					nextTry = (DoublePoint) nextCell[i].get(0);
 
-					newCell = nextTry.getNewCell();
+					newCell  = nextTry.getNewCell();
 					prevCell = nextTry.getPrevCell();
 
-					newCellX = (int)newCell.getX();
-					newCellY = (int)newCell.getY();
+					newCellX  = (int)newCell.getX();
+					newCellY  = (int)newCell.getY();
 					prevCellX = (int)prevCell.getX();
 					prevCellY = (int)prevCell.getY();
 					
 					//check that cell can be moved to
 					if(board[newCellY][newCellX] == player){break;}
 
+					//check that cell is not previously explored
+					if(board[newCellY][newCellX] == 1){break;}
+					
 					// if diagonal check for adjacents
 					if((Math.abs(newCellX - prevCellX) + Math.abs(newCellY - prevCellY)) != 0){ // diagonal movement
 
@@ -273,6 +278,7 @@ public class Update {
 								nextCell[cellScore].add(newPointPair);
 								
 								exploredList.add(newCell);
+								explored[(int)newCell.getY()][(int)newCell.getX()] = 1;
 								
 								break;
 
@@ -290,7 +296,7 @@ public class Update {
 			Move newCap = new Move();
 			newCap.Row = exploredList.get(0).y;
 			newCap.Col = exploredList.get(0).x;
-			newCap.P   = Piece.NO_VALUE_FOR_CAPTURE;
+			newCap.P   = Piece.NO_VALUE_FOR_CAPTURE;	// TODO fix Cell
 			
 			gameBoard.setCell(newCap);
 			exploredList.remove(0);

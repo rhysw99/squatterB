@@ -8,6 +8,8 @@ import java.awt.Point;
 
 public class Board{
 
+	
+	// TODO make into bytes
 	private int[][] board;			//the game board
 	private int[][] explored;		//has pathfind explored which cell
 	private int[][] scoreMap;		//best next move for pathfind
