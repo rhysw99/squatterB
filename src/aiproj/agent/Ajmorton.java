@@ -1,11 +1,11 @@
-package Agent;
+package aiproj.agent;
 
 
 import java.io.PrintStream;
 
 import aiproj.squatter.*;
 
-public class Ajmorton implements Player, Piece{
+public class Ajmorton implements Player, Piece {
 
 	public int boardSize;				// should have getters and setters
 	public int playerColour;
@@ -18,8 +18,8 @@ public class Ajmorton implements Player, Piece{
 		 *  Return 0 for successful initialization and -1 for failed one.
 		 */	
 		
-		boolean playerCorrect = ((p == BLACK) || (p == WHITE));	
-		boolean sizeCorrect   = ((n == 5) || (n == 7));							// Is this only cases?
+		boolean playerCorrect = ((p == BLACK) || (p == WHITE));
+		boolean sizeCorrect   = ((n == 5) || (n == 7)); // Is this only cases?
 			
 		
 		if(playerCorrect && sizeCorrect){
@@ -27,12 +27,9 @@ public class Ajmorton implements Player, Piece{
 			this.playerColour = p;
 			board             = new Board(p);
 			return 0;
-		
-		} else {
-			return -1;
 		}
 		
-		
+		return -1; //TODO Shouldn't be magic numbers
 	}
 
 	

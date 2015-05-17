@@ -1,4 +1,4 @@
-package Agent;
+package aiproj.agent;
    
 import aiproj.squatter.Move;
 import aiproj.squatter.Piece;

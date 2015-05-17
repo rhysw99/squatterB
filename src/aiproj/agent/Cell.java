@@ -5,7 +5,7 @@
  * rhysw    Rhys Williams 661561
  */
 // TODO fix for projB
-package Agent;
+package aiproj.agent;
 
 import java.awt.Point;
 
