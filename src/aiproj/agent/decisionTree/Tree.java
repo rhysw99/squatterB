@@ -33,6 +33,12 @@ public class Tree<T> {
 			return true;
 		}
 		
+		public boolean insert(Node<T> node) {
+			this.children.add(node);
+			
+			return true;
+		}
+		
 		public T getData() {
 			return data;
 		}

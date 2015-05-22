@@ -28,7 +28,11 @@ public class Board {
 	
 	/* SETTER */
 	public void setCell(GameMove move) {
-		this.board[move.getLocation().x][move.getLocation().y] = (byte) move.getPlayer();
+		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
+	}
+	
+	public void resetCell(GameMove move) {
+		board[move.getLocation().y][move.getLocation().x] = Piece.EMPTY;
 	}
 	
 	/* GETTER */
@@ -45,14 +49,9 @@ public class Board {
 	}
 
 	public boolean isLegal(GameMove move){
-		boolean onBoardX = (move.getLocation().x >= 0) && (move.getLocation().x < boardSize);
-		boolean onBoardY = (move.getLocation().y >= 0) && (move.getLocation().y < boardSize);
-	
-		boolean canPlace = (board[move.getLocation().y][move.getLocation().x] == Piece.EMPTY); 
-		
-		if (!(onBoardX && onBoardY && canPlace)) {
-			updateBoard(move);
-			
+		if (!onBoard(move.getLocation())) {
+			return false;
+		} else if (isOccupied(move.getLocation())) {
 			return false;
 		}
 		
@@ -70,6 +69,10 @@ public class Board {
 			return true;
 		}
 		return false;
+	}
+	
+	public boolean isOccupied(Point p) {
+		return (board[p.y][p.x] != Piece.EMPTY);
 	}
 	
 	public boolean onEdge(Point p) {
