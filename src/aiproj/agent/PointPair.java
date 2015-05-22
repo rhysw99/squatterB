@@ -2,14 +2,14 @@ package aiproj.agent;
 
 import java.awt.Point;
 
-public class DoublePoint {
+public class PointPair {
 
 	private Point newCell;
 	private Point prevCell;
 	
 	
 	/* CONSTRUCTER */
-	public DoublePoint(Point newCell, Point prevCell){
+	public PointPair(Point newCell, Point prevCell){
 		this.newCell  = newCell;
 		this.prevCell = prevCell;
 	}

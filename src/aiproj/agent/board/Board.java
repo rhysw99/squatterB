@@ -1,7 +1,7 @@
 package aiproj.agent.board;
    
 import aiproj.agent.Ajmorton;
-import aiproj.agent.DoublePoint;
+import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
 import aiproj.squatter.Move;
 import aiproj.squatter.Piece;
@@ -72,6 +72,13 @@ public class Board {
 		return false;
 	}
 	
+	public boolean onEdge(Point p) {
+		if (p.x == 0 && p.y == 0 && p.x == boardSize-1 && p.y == boardSize-1) {
+			return true;						
+		}
+		return false;
+	}
+	
 	
 	private void checkCaptures(GameMove move) {
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
@@ -137,18 +144,15 @@ public class Board {
 		//start pathfinding
 		int i,j;
 		
-		int row = startPath.y;
-		int col = startPath.x;
-		
 		// creates a static array of dynamic lists
 		// stores variable length lists of possible next cells
 		// indexed in static list by score of possible next cell
 		// board is scored so that cells can be scored between 0 and maxScore 
 		// so that static array is as small as possible
-		HashMap<Integer, ArrayList<DoublePoint>> potentialMoves = new HashMap<Integer, ArrayList<DoublePoint>>(sb.getMaxScore() + 1);
+		HashMap<Integer, ArrayList<PointPair>> potentialMoves = new HashMap<Integer, ArrayList<PointPair>>(sb.getMaxScore() + 1);
 		
 		for (int a = 0; a < sb.getMaxScore(); a++) {
-			potentialMoves.put(a, new ArrayList<DoublePoint>());
+			potentialMoves.put(a, new ArrayList<PointPair>());
 		}
 		
 		// list of p cells that have been explored, if no path to edge is found
@@ -156,116 +160,110 @@ public class Board {
 		ArrayList<Point> exploredList = new ArrayList<Point>();
 		
 		// make sure start point is on board
-		if(row < 0 || row >=boardSize || col < 0 || col >=boardSize)	{return;}
+		if (!onBoard(startPath)) {
+			return;
+		}
 		
 		//check if already at edge
-		if(row == 0 || row == boardSize || col == 0 || col == boardSize){return;}
+		if (onEdge(startPath)) {
+			return;
+		}
 		
 		//add finished cell to explored list
 		exploredList.add(startPath);
-		explored[startPath.y][startPath.x] = 1;;
+		explored[startPath.y][startPath.x] = 1;
 		
 		//explore cells around
 		// TODO fix nulls
-		Point nextPosCell = null, currCell;
-		int newRow, newCol, cellScore;
-		DoublePoint newPointPair = null;
+		// What does this mean????
 		
-		currCell = startPath;
-		newRow = row;
-		newCol = col;
+		
+		Point currCell = startPath;
 		
 		for(i = -1; i <= 1; i++) {
 			for(j = -1; j <= 1; j++) {
 				if(i != 0 && j != 0) {	// not current cell
-					newRow = row + i;
-					newCol = col + j;
+					int newRow = (int) currCell.getY() + i;
+					int newCol = (int) currCell.getX() + j;
+					
+					Point nextCell = new Point(newCol, newRow);
 
 					if (onBoard(new Point(newCol, newRow))) {
-						cellScore = sb.getValue(new Point(newCol, newRow));
-						nextPosCell.setLocation(newCol, newRow);
+						int cellScore = sb.getValue(nextCell);
 
-						newPointPair.setNewCell(nextPosCell);
-						newPointPair.setPrevCell(currCell);
+						PointPair newPointPair = new PointPair(nextCell, currCell);
 						potentialMoves.get(cellScore).add(newPointPair);
-						explored[(int)nextPosCell.getY()][(int)nextPosCell.getX()] = 1;
+						explored[nextCell.y][nextCell.x] = 1;
 
 					}
 				}
 			}
 		}
-	
+		
 		// end initial cell check
 		
-		DoublePoint nextTry;
-		Point newCell;
-		Point prevCell;
-
-		int newCellX, newCellY, prevCellX, prevCellY;
 		boolean exhausted = false;
 		
 		while(!exhausted){
 			for(i = sb.getMaxScore(); i >= 0; i--){							// start looking at highest scoring possibles
 				if(!potentialMoves.get(i).isEmpty()) {							// is possible point of score i available?
 					// there are moves with score i to try
-					nextTry = potentialMoves.get(i).get(0);
+					PointPair nextTry = potentialMoves.get(i).get(0);
 
-					newCell  = nextTry.getNewCell();
-					prevCell = nextTry.getPrevCell();
-
-					newCellX  = newCell.x;
-					newCellY  = newCell.y;
-					prevCellX = prevCell.x;
-					prevCellY = prevCell.y;
+					Point newCell  = nextTry.getNewCell();
+					Point prevCell = nextTry.getPrevCell();
 					
 					//check that cell can be moved to
-					if(board[newCellY][newCellX] == move.getPlayer()) {
-						break;
+					if(board[newCell.y][newCell.x] == move.getPlayer()) {
+						continue;
 					}
 
 					//check that cell is not previously explored
-					if(explored[newCellY][newCellX] == 1){
-						break;
+					if(explored[newCell.y][newCell.x] == 1){
+						continue;
 					}
 					
 					// if diagonal check for adjacents
-					if((Math.abs(newCellX - prevCellX) + Math.abs(newCellY - prevCellY)) != 0) { // diagonal movement
+					// TODO IS THIS CORRECT?
+					if((Math.abs(newCell.x - prevCell.x) + Math.abs(newCell.y - prevCell.y)) != 0) { // diagonal movement
 						int ownerCellX, ownerCellY;
 
-						ownerCellX = board[prevCellY + (newCellY - prevCellY)][prevCellX];
-						ownerCellY = board[prevCellY][prevCellX + (newCellX - prevCellX)];
+						// TODO What does this do?
+						ownerCellX = board[prevCell.y + (newCell.y - prevCell.y)][prevCell.x];
+						ownerCellY = board[prevCell.y][prevCell.x + (newCell.x - prevCell.x)];
 
+						// Cannot path to cell
 						if((ownerCellX == move.getPlayer()) && (ownerCellY == move.getPlayer())) {
 							break;
-						}	//cannot path to cell
+						}
 					}
 					
 					// else can use cell to check
 					
 					// Are we at one of the edge nodes?
-					if(scoreMap[newCellY][newCellX] == sb.getMaxScore()){
+					if(scoreMap[newCell.y][newCell.x] == sb.getMaxScore()){
 						return;	// no new cells in capture list
 					}
 					
 					//else add surrounding cells to potentialMoves
 					for(i = -1; i <= 1; i++) {
 						for(j = -1; j <= 1; j++) {
-							if(i != 0 && j != 0){	// not current cell
-								newRow = row + i;
-								newCol = col + j;
+							if(i != 0 && j != 0) {	// not current cell
+								int newRow = startPath.y + i;
+								int newCol = startPath.x + j;
+								Point nextCell = new Point(newCol, newRow);
 
-								cellScore = scoreMap[newRow][newCol];
-								nextPosCell.setLocation(newCol, newRow);
+								int cellScore = scoreMap[newRow][newCol];
 
-								newPointPair.setNewCell(nextPosCell);
-								newPointPair.setPrevCell(currCell);
+								PointPair newPointPair = new PointPair(nextCell, currCell);
 								potentialMoves.get(cellScore).add(newPointPair);
 								
 								exploredList.add(newCell);
 								explored[newCell.y][newCell.x] = 1;
 								
+								//TODO Why does it break here?
+								// This would just go to "for(i = -1; i <= 1; i++) {"
 								break;
-
 							}
 						}
 					}
@@ -314,7 +312,7 @@ public class Board {
 			else if (bottomRight) return (new Point(currCell.x    , currCell.y + 1));
 			else if (bottomLeft)  return (new Point(currCell.x + 1, currCell.y    ));
 		}
-		return new Point(-1,-1);	//ERROR - technically unreachable
+		return null;	//ERROR - technically unreachable
 	}
 	
 	/* TEST FUNCTION */
