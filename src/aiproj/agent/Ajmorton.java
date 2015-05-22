@@ -20,7 +20,7 @@ public class Ajmorton implements Player, Piece {
 
 	private int player;
 	
-	private static Board board;
+	private static Board mainBoard;
 	private static ScoreBoard scoreBoard;
 	
 	public static void main(String[] args) {
@@ -44,7 +44,7 @@ public class Ajmorton implements Player, Piece {
 		}
 		
 		this.player = p;
-		this.board = new Board((byte) n);
+		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
 		
 		System.out.println("test2");
@@ -69,11 +69,11 @@ public class Ajmorton implements Player, Piece {
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
-		if(!board.isLegal(GameMove.getGameMove(m))) {
+		if(!mainBoard.isLegal(GameMove.getGameMove(m))) {
 			return FAILURE;
 		}
 			
-		board.updateBoard(GameMove.getGameMove(m));
+		mainBoard.updateBoard(GameMove.getGameMove(m));
 		
 		return SUCCESS;
 	}
@@ -90,7 +90,6 @@ public class Ajmorton implements Player, Piece {
 	
 	public boolean validMove(byte[][] board, Move m) {
 		
-		
 		return true;
 	}
 	
@@ -102,32 +101,28 @@ public class Ajmorton implements Player, Piece {
 	}
 	
 	public void buildTree() {
-		byte[][] d_board = new byte[5][5];
-		Tree<GameState> decisionTree = new Tree<GameState>();
+		Tree<GameState> decisionTree = new Tree<GameState>(new Board(mainBoard.getBoardSize()));
 		Root<GameState> root = decisionTree.getRoot();
 		
 		int p = Piece.BLACK;
 		int depth = 1;
 		
 		for (int d = depth; d < depth + 3; d++) {
-			for (int j = 0; j < board.getBoardSize(); j++) {
-				for (int i = 0; i < board.getBoardSize(); i++) {
+			for (int j = 0; j < mainBoard.getBoardSize(); j++) {
+				for (int i = 0; i < mainBoard.getBoardSize(); i++) {
 					//TODO Switch to new move class?
 					GameMove m = new GameMove(p, new Point(i, j));
-					if (board.isLegal(m)) {
+					if (mainBoard.isLegal(m)) {
 						root.insert(new GameState(root.getData(), m));
 					}
 				}
 			}
 		}
-	
-		
-		
 		
 	}
 	
 	public static Board getBoard() {
-		return board;
+		return mainBoard;
 	}
 
 	public static ScoreBoard getScoreBoard() {

@@ -73,25 +73,24 @@ public class Board {
 	}
 	
 	
-	public void checkCaptures(GameMove move) {
+	private void checkCaptures(GameMove move) {
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
-		int top  = (move.getLocation().y <= boardSize/2) ? -1:1;
-		int left = (move.getLocation().x <= boardSize/2) ? -1:1;
+		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
+		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
 
-		Point centerCell   = new Point(move.getLocation().x,        move.getLocation().y);
-		Point startCell    = new Point(move.getLocation().x + left, move.getLocation().y + top);
+		Point startCell = new Point(move.getLocation().x + xOffset, move.getLocation().y + yOffset);
 
 		Point pathStart = new Point(startCell);
-		Point endCell   = new Point(startCell);
+		Point endCell = new Point(startCell);
 
 		// can path from startCell, else path from next available cell
 		// if no paths are possible, end
 		if(board[startCell.y][startCell.x] != move.getPlayer()){
 			pathfind(startCell, move);
 		} else {
-			pathStart = potentialMoves(pathStart, centerCell, true);
+			pathStart = nextCell(pathStart, move.getLocation(), true);
 			while(board[pathStart.y][pathStart.x] == move.getPlayer()){
-				pathStart = potentialMoves(pathStart, centerCell, true);
+				pathStart = nextCell(pathStart, move.getLocation(), true);
 				if(pathStart == endCell) {
 					return;
 				}
@@ -101,12 +100,12 @@ public class Board {
 
 		// move pointer clockwise until blocked
 		while(board[pathStart.y][pathStart.x] != move.getPlayer()){
-			pathStart = potentialMoves(pathStart, centerCell, true);		//magic number
+			pathStart = nextCell(pathStart, move.getLocation(), true);		//magic number
 		}
 
 		//move pointer counterclockwise until blocked
-		while(board[endCell.y][endCell.x] != move.P){
-			endCell = potentialMoves(endCell, centerCell, false);		//magic number
+		while(board[endCell.y][endCell.x] != move.getPlayer()){
+			endCell = nextCell(endCell, move.getLocation(), false);		//magic number
 		}
 
 		// no more cells to check
@@ -146,7 +145,7 @@ public class Board {
 		// indexed in static list by score of possible next cell
 		// board is scored so that cells can be scored between 0 and maxScore 
 		// so that static array is as small as possible
-		HashMap<Integer, ArrayList<DoublePoint>> potentialMoves = new HashMap(sb.getMaxScore() + 1);
+		HashMap<Integer, ArrayList<DoublePoint>> potentialMoves = new HashMap<Integer, ArrayList<DoublePoint>>(sb.getMaxScore() + 1);
 		
 		for (int a = 0; a < sb.getMaxScore(); a++) {
 			potentialMoves.put(a, new ArrayList<DoublePoint>());
@@ -207,45 +206,50 @@ public class Board {
 		
 		while(!exhausted){
 			for(i = sb.getMaxScore(); i >= 0; i--){							// start looking at highest scoring possibles
-				if(!potentialMoves.get(i).isEmpty()){							// is possible point of score i available?
+				if(!potentialMoves.get(i).isEmpty()) {							// is possible point of score i available?
 					// there are moves with score i to try
-					nextTry = (DoublePoint) potentialMoves.get(i).get(0);
+					nextTry = potentialMoves.get(i).get(0);
 
 					newCell  = nextTry.getNewCell();
 					prevCell = nextTry.getPrevCell();
 
-					newCellX  = (int)newCell.getX();
-					newCellY  = (int)newCell.getY();
-					prevCellX = (int)prevCell.getX();
-					prevCellY = (int)prevCell.getY();
+					newCellX  = newCell.x;
+					newCellY  = newCell.y;
+					prevCellX = prevCell.x;
+					prevCellY = prevCell.y;
 					
 					//check that cell can be moved to
-					if(board[newCellY][newCellX] == move.getPlayer()){break;}
+					if(board[newCellY][newCellX] == move.getPlayer()) {
+						break;
+					}
 
 					//check that cell is not previously explored
-					if(board[newCellY][newCellX] == 1){break;}
+					if(explored[newCellY][newCellX] == 1){
+						break;
+					}
 					
 					// if diagonal check for adjacents
-					if((Math.abs(newCellX - prevCellX) + Math.abs(newCellY - prevCellY)) != 0){ // diagonal movement
-
+					if((Math.abs(newCellX - prevCellX) + Math.abs(newCellY - prevCellY)) != 0) { // diagonal movement
 						int ownerCellX, ownerCellY;
 
-						ownerCellX = board[prevCellY + (newCellY - prevCellY)][prevCellX                         ];
-						ownerCellY = board[prevCellY                         ][prevCellX + (newCellX - prevCellX)];
+						ownerCellX = board[prevCellY + (newCellY - prevCellY)][prevCellX];
+						ownerCellY = board[prevCellY][prevCellX + (newCellX - prevCellX)];
 
-						if((ownerCellX == move.getPlayer()) && (ownerCellY == move.getPlayer())){break;}	//cannot path to cell
+						if((ownerCellX == move.getPlayer()) && (ownerCellY == move.getPlayer())) {
+							break;
+						}	//cannot path to cell
 					}
 					
 					// else can use cell to check
 					
-					//at edge?
+					// Are we at one of the edge nodes?
 					if(scoreMap[newCellY][newCellX] == sb.getMaxScore()){
 						return;	// no new cells in capture list
 					}
 					
 					//else add surrounding cells to potentialMoves
-					for(i = -1; i <= 1; i++){
-						for(j = -1; j <=1; j++){
+					for(i = -1; i <= 1; i++) {
+						for(j = -1; j <= 1; j++) {
 							if(i != 0 && j != 0){	// not current cell
 								newRow = row + i;
 								newCol = col + j;
@@ -258,7 +262,7 @@ public class Board {
 								potentialMoves.get(cellScore).add(newPointPair);
 								
 								exploredList.add(newCell);
-								explored[(int)newCell.getY()][(int)newCell.getX()] = 1;
+								explored[newCell.y][newCell.x] = 1;
 								
 								break;
 
@@ -285,6 +289,33 @@ public class Board {
 		return;
 	}
 	
+	private static Point nextCell(Point currCell, Point centerCell, boolean clockwise){
+		// TODO	
+		// consolidate into fewer cycles, messier code
+		if(clockwise){
+			boolean topLeft     = (currCell.x <= centerCell.x) && (currCell.y <  centerCell.y);
+			boolean topRight    = (currCell.x >  centerCell.x) && (currCell.y <= centerCell.y);	
+			boolean bottomRight = (currCell.x >= centerCell.x) && (currCell.y >  centerCell.y);
+			boolean bottomLeft  = (currCell.x <  centerCell.x) && (currCell.y >= centerCell.y);
+			
+			if 		(topLeft)     return (new Point(currCell.x + 1, currCell.y    ));
+			else if (topRight)    return (new Point(currCell.x    , currCell.y - 1));
+			else if (bottomRight) return (new Point(currCell.x - 1, currCell.y    ));
+			else if (bottomLeft)  return (new Point(currCell.x    , currCell.y + 1));
+			
+		} else if(!clockwise){
+			boolean topLeft     = (currCell.x <  centerCell.x) && (currCell.y <= centerCell.y);
+			boolean topRight    = (currCell.x >= centerCell.x) && (currCell.y <  centerCell.y);	
+			boolean bottomRight = (currCell.x >  centerCell.x) && (currCell.y >= centerCell.y);
+			boolean bottomLeft  = (currCell.x <= centerCell.x) && (currCell.y >  centerCell.y);
+			
+			if      (topLeft)     return (new Point(currCell.x    , currCell.y - 1));
+			else if (topRight)    return (new Point(currCell.x - 1, currCell.y    ));
+			else if (bottomRight) return (new Point(currCell.x    , currCell.y + 1));
+			else if (bottomLeft)  return (new Point(currCell.x + 1, currCell.y    ));
+		}
+		return new Point(-1,-1);	//ERROR - technically unreachable
+	}
 	
 	/* TEST FUNCTION */
 	

@@ -21,12 +21,12 @@ public class Update {
 			boolean bottomRight = (currCell.x >= centerCell.x) && (currCell.y >  centerCell.y);
 			boolean bottomLeft  = (currCell.x <  centerCell.x) && (currCell.y >= centerCell.y);
 			
-			if      (topLeft)     return (new Point(currCell.x + 1, currCell.y    ));
+			if 		(topLeft)     return (new Point(currCell.x + 1, currCell.y    ));
 			else if (topRight)    return (new Point(currCell.x    , currCell.y - 1));
 			else if (bottomRight) return (new Point(currCell.x - 1, currCell.y    ));
 			else if (bottomLeft)  return (new Point(currCell.x    , currCell.y + 1));
 			
-		}else if(!clockwise){
+		} else if(!clockwise){
 			boolean topLeft     = (currCell.x <  centerCell.x) && (currCell.y <= centerCell.y);
 			boolean topRight    = (currCell.x >= centerCell.x) && (currCell.y <  centerCell.y);	
 			boolean bottomRight = (currCell.x >  centerCell.x) && (currCell.y >= centerCell.y);
