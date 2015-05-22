@@ -1,8 +1,10 @@
-package aiproj.agent;
+package aiproj.agent.board;
 
 import java.awt.Point;
 import java.util.ArrayList;
 
+import aiproj.agent.DoublePoint;
+import aiproj.agent.decisionTree.GameMove;
 import aiproj.squatter.Move;
 import aiproj.squatter.Piece;
 
@@ -13,10 +15,10 @@ public class Update {
 	public static void updateBoard(Move newMove, Board gameBoard){
 		// TODO
 		
-		int[][] board = gameBoard.getBoard();
+		byte[][] board = gameBoard.getBoard();
 		int boardSize = gameBoard.getBoardSize();
 		
-		board[newMove.Row][newMove.Col] = newMove.P;
+		board[newMove.Row][newMove.Col] = (byte) newMove.P;
 		
 		// find pathfinding start points
 			
@@ -141,9 +143,9 @@ public class Update {
 		
 		int boardSize    = gameBoard.getBoardSize();
 		int maxScore     = gameBoard.getMaxScore();
-		int[][] board    = gameBoard.getBoard();
-		int[][] explored = gameBoard.getExplored();
-		int[][] scoreMap = gameBoard.getScoreMap();
+		byte[][] board    = gameBoard.getBoard();
+		byte[][] explored = gameBoard.getExplored();
+		byte[][] scoreMap = gameBoard.getScoreMap();
 		
 		
 		//start pathfinding

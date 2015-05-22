@@ -2,6 +2,8 @@ package aiproj.agent.decisionTree;
 
 import java.util.ArrayList;
 
+import aiproj.agent.board.Board;
+
 public class Tree<T> {
 	private Root<T> root;
 	
@@ -42,11 +44,11 @@ public class Tree<T> {
 	}
 	
 	public static class Root<T> extends Node<T> {
-		private byte[][] board;
+		private Board board;
 		
 		public Root(byte[][] board) {
 			super(null, null);
-			this.board = board;
+			this.board = new Board(board, board.length);
 		}
 	}
 }

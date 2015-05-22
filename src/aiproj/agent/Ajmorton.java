@@ -1,16 +1,27 @@
 package aiproj.agent;
 
 
+import java.awt.Point;
 import java.io.PrintStream;
 
+import aiproj.agent.board.Board;
+import aiproj.agent.board.ScoreBoard;
+import aiproj.agent.board.Update;
+import aiproj.agent.decisionTree.GameMove;
+import aiproj.agent.decisionTree.GameState;
+import aiproj.agent.decisionTree.Tree;
+import aiproj.agent.decisionTree.Tree.Root;
 import aiproj.squatter.*;
 
 public class Ajmorton implements Player, Piece {
+	
+	public static final int FAILURE = -1;
+	public static final int SUCCESS = 0;
 
-	public int boardSize;				// should have getters and setters
-	public int playerColour;
+	public int player;
 	
 	public Board board;
+	public ScoreBoard scoreBoard;
 	
 	// done
 	public int init(int n, int p) {
@@ -21,15 +32,15 @@ public class Ajmorton implements Player, Piece {
 		boolean playerCorrect = ((p == BLACK) || (p == WHITE));
 		boolean sizeCorrect   = ((n == 5) || (n == 7)); // Is this only cases?
 			
-		
-		if(playerCorrect && sizeCorrect){
-			this.boardSize    = n;
-			this.playerColour = p;
-			board             = new Board(p);
-			return 0;
+
+		if (!playerCorrect || !sizeCorrect) {
+			return FAILURE;
 		}
 		
-		return -1; //TODO Shouldn't be magic numbers
+		this.player = p;
+		this.board		  = new Board((byte) p);
+		
+		return SUCCESS;
 	}
 
 	
@@ -49,12 +60,13 @@ public class Ajmorton implements Player, Piece {
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
-		if(board.isLegal(m, boardSize) == 0){
-			Update.updateBoard(m, board);
-			return 0;
+		if(!board.isLegal(m)){
+			return FAILURE;
 		}
+			
+		Update.updateBoard(m, board);
 		
-		return -1;
+		return SUCCESS;
 	}
 	
 	//
@@ -67,13 +79,40 @@ public class Ajmorton implements Player, Piece {
 		return 0;
 	}
 	
+	public boolean validMove(byte[][] board, Move m) {
+		
+		
+		return true;
+	}
+	
 	//
 	public void printBoard(PrintStream output) {
 	//TODO
-		/* Function called by referee to get the board configuration in String format
-		 * 
-		 */
 
+		
+	}
+	
+	public void buildTree() {
+		byte[][] d_board = new byte[5][5];
+		Tree<GameState> decisionTree = new Tree<GameState>(d_board);
+		Root<GameState> root = decisionTree.getRoot();
+		
+		int p = Piece.BLACK;
+		int depth = 1;
+		
+		for (int d = depth; d < depth + 3; d++) {
+			for (int j = 0; j < board.getBoardSize(); j++) {
+				for (int i = 0; i < board.getBoardSize(); i++) {
+					//TODO Switch to new move class?
+					GameMove m = new GameMove(p, new Point(i, j));
+					if (board.isLegal(m)) {
+						root.insert(new GameState(root.getData(), m));
+					}
+				}
+			}
+		}
+	
+		
 		
 		
 	}
