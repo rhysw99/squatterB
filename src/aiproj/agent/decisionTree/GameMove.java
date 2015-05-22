@@ -8,16 +8,16 @@ import aiproj.squatter.Move;
 public class GameMove {
 	
 	/* Maybe use a byte instead and use hashTable or something to get the char from the byte and vice versa as in project A. */
-	private int player;
+	private byte player;
 	/* Using point is better java design, however it has much more overhead than just two bytes */
 	private Point location;
 	
 	public GameMove(int player, Point location) {
-		this.player = player;
+		this.player = (byte) player;
 		this.location = location;
 	}
 
-	public int getPlayer() {
+	public byte getPlayer() {
 		return player;
 	}
 
@@ -26,7 +26,7 @@ public class GameMove {
 	}
 	
 	public static GameMove getGameMove(Move m) {
-		return new GameMove(m.P, new Point(m.Col, m.Row));
+		return new GameMove((byte) m.P, new Point(m.Col, m.Row));
 	}
 	
 	public static Move getMove(GameMove gm) {

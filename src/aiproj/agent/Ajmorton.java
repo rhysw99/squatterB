@@ -18,10 +18,16 @@ public class Ajmorton implements Player, Piece {
 	public static final int FAILURE = -1;
 	public static final int SUCCESS = 0;
 
-	public int player;
+	private int player;
 	
-	public Board board;
-	public ScoreBoard scoreBoard;
+	private static Board board;
+	private static ScoreBoard scoreBoard;
+	
+	public static void main(String[] args) {
+		System.out.println("test");
+		Ajmorton aj = new Ajmorton();
+		aj.init(7, 1);
+	}
 	
 	// done
 	public int init(int n, int p) {
@@ -38,7 +44,10 @@ public class Ajmorton implements Player, Piece {
 		}
 		
 		this.player = p;
-		this.board		  = new Board((byte) p);
+		this.board = new Board((byte) n);
+		this.scoreBoard = new ScoreBoard((byte) n);
+		
+		System.out.println("test2");
 		
 		return SUCCESS;
 	}
@@ -60,11 +69,11 @@ public class Ajmorton implements Player, Piece {
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
-		if(!board.isLegal(m)){
+		if(!board.isLegal(GameMove.getGameMove(m))) {
 			return FAILURE;
 		}
 			
-		Update.updateBoard(m, board);
+		board.updateBoard(GameMove.getGameMove(m));
 		
 		return SUCCESS;
 	}
@@ -94,7 +103,7 @@ public class Ajmorton implements Player, Piece {
 	
 	public void buildTree() {
 		byte[][] d_board = new byte[5][5];
-		Tree<GameState> decisionTree = new Tree<GameState>(d_board);
+		Tree<GameState> decisionTree = new Tree<GameState>();
 		Root<GameState> root = decisionTree.getRoot();
 		
 		int p = Piece.BLACK;
@@ -116,7 +125,13 @@ public class Ajmorton implements Player, Piece {
 		
 		
 	}
-
 	
+	public static Board getBoard() {
+		return board;
+	}
+
+	public static ScoreBoard getScoreBoard() {
+		return scoreBoard;
+	}
 	
 }

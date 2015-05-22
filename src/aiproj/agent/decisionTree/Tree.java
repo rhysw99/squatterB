@@ -7,7 +7,7 @@ import aiproj.agent.board.Board;
 public class Tree<T> {
 	private Root<T> root;
 	
-	public Tree (byte[][] board) {
+	public Tree (Board board) {
 		root = new Root<T>(board);
 	}
 	
@@ -46,9 +46,9 @@ public class Tree<T> {
 	public static class Root<T> extends Node<T> {
 		private Board board;
 		
-		public Root(byte[][] board) {
+		public Root(Board board) {
 			super(null, null);
-			this.board = new Board(board, board.length);
+			this.board = board;
 		}
 	}
 }

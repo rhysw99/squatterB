@@ -2,6 +2,7 @@ package aiproj.agent.decisionTree;
 
 import java.awt.Point;
 
+import aiproj.agent.board.Board;
 import aiproj.agent.decisionTree.Tree.Root;
 import aiproj.squatter.Piece;
 
@@ -14,7 +15,7 @@ public class ExampleUsage {
 		// BLACK = 2
 		// WHITE_C = 3
 		// BLACK_C = 4
-		byte[][] board = new byte[5][5];
+		Board board = new Board(5);
 		Tree<GameState> decisionTree = new Tree<GameState>(board);
 		Root<GameState> root = decisionTree.getRoot();
 		root.insert(new GameState(root.getData(), new GameMove(Piece.BLACK, new Point(0,1))));
