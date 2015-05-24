@@ -10,7 +10,7 @@ public class GameState {
 	
 	private boolean[] transformFlags;
 	
-	private int score = 0;
+	private int score = Integer.MAX_VALUE;
 	
 	private int depth = 0;
 	
