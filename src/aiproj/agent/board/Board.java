@@ -166,7 +166,7 @@ public class Board {
 		// stores variable length lists of possible next cells
 		HashMap<Integer, ArrayList<PointPair>> potentialMoves = new HashMap<Integer, ArrayList<PointPair>>(sb.getMaxScore() + 1);
 
-		for (int a = 0; a < sb.getMaxScore(); a++) {
+		for (int a = 0; a <= sb.getMaxScore(); a++) {
 			potentialMoves.put(a, new ArrayList<PointPair>());
 		}
 
