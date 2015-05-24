@@ -44,7 +44,7 @@ public class Ajmorton implements Player, Piece {
 		while (!aj.mainBoard.isFull()) {
 			//System.out.println("New cycle");
 			aj.makeMove();
-			GameMove gm = new GameMove(aj.currentPlayer, new Point(1,2));
+			GameMove gm = new GameMove(aj.currentPlayer, new Point(0,0));
 			while (!aj.mainBoard.isLegal(gm) && !aj.mainBoard.isFull()) {
 				int x = (int) Math.round(aj.mainBoard.getBoardSize()*Math.random());
 				int y = (int) Math.round(aj.mainBoard.getBoardSize()*Math.random());
@@ -75,11 +75,11 @@ public class Ajmorton implements Player, Piece {
 		this.playerID = p;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
-		mainBoard.setCell(new GameMove(3, new Point(3, 3)));
-		mainBoard.setCell(new GameMove(3, new Point(1, 4)));
-		mainBoard.setCell(new GameMove(3, new Point(2, 0)));
-		mainBoard.setCell(new GameMove(3, new Point(2, 4)));
-		mainBoard.setCell(new GameMove(3, new Point(1, 0)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(0, 2)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 1)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 3)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(3, 1)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(3, 3)));
 		this.moves = new ArrayList<GameMove>();
 		
 		this.currentPlayer = Piece.WHITE;
@@ -93,9 +93,7 @@ public class Ajmorton implements Player, Piece {
 		if (currentMove == 0) {
 			gm = new GameMove(Piece.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2));
 		} else {
-			System.out.println("pre tree");
 			Tree<GameState> decisionTree = buildTree();
-			System.out.println("post tree");
 			
 			int maxDepth = currentMove+MAX_PLY;
 			maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
@@ -108,9 +106,7 @@ public class Ajmorton implements Player, Piece {
 				if (best == null || n.getData().getScore() > best.getData().getScore()) {
 					best = n;
 				}
-				System.out.println("Evaluation function: "+n.getData().getScore());
 			}
-			System.out.println("Choosing score: "+best.getData().getScore());
 			gm = best.getData().getMove();
 		}
 		

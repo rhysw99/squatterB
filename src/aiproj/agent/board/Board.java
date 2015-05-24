@@ -350,7 +350,7 @@ public class Board {
 		if(player == Piece.BLACK){
 			switch (board[y][x]){
 			case Piece.WHITE:
-				board[y][x] = Piece.WHITECAP;
+				board[y][x] = Piece.WHITE_CAP;
 				break;
 
 			case Piece.EMPTY:
@@ -363,7 +363,7 @@ public class Board {
 		}else if(player == Piece.WHITE){
 			switch(board[y][x]){
 			case Piece.BLACK:
-				board[y][x] = Piece.BLACKCAP;
+				board[y][x] = Piece.BLACK_CAP;
 				break;
 			case Piece.EMPTY:
 				board[y][x] = Piece.CAP;
@@ -385,8 +385,8 @@ public class Board {
 	/*
 	 * Transform comparison should be in buildTree
 	 * Takes two boards, compares most recent move of the first board to check for conflicts
-	 * 
-	public Board transform(int i, Point newCellPos) {
+	 */
+	public Board transform(int i) {
 		switch (i) {
 			case 0: //transform90CW
 				return transform90CW();
@@ -447,7 +447,6 @@ public class Board {
 		// TODO Auto-generated method stub
 		return this;
 	}
-	 */
 
 
 	/* TEST FUNCTION */

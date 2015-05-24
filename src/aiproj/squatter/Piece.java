@@ -12,5 +12,8 @@ public interface Piece {
                             BLACK = 2,
                             DEAD = 3,
                             EMPTY = 0,
-    		                INVALID = -1;
+    		                INVALID = -1,
+    						CAP = 4,
+    						WHITE_CAP = 5,
+    						BLACK_CAP = 6;
 }
