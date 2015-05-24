@@ -66,6 +66,7 @@ public class Board {
 	public void updateBoard(GameMove move, ScoreBoard sb) {		
 		board[move.getLocation().y][move.getLocation().x] = move.getPlayer();
 
+
 		checkCaptures(move, sb);
 	}
 
@@ -81,7 +82,7 @@ public class Board {
 	}
 
 	public boolean onEdge(Point p) {
-		if (p.x == 0 && p.y == 0 && p.x == boardSize-1 && p.y == boardSize-1) {
+		if (p.x == 0 || p.y == 0 || p.x == boardSize-1 || p.y == boardSize-1) {
 			return true;						
 		}
 		return false;
@@ -101,12 +102,15 @@ public class Board {
 
 
 	private void checkCaptures(GameMove move, ScoreBoard sb) {
+		
+		
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
 		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
 		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
 
 		Point startCell = new Point(move.getLocation().x + xOffset, move.getLocation().y + yOffset);
-
+		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
+		
 		Point pathStart = new Point(startCell);
 		Point endCell = new Point(startCell);
 
@@ -126,25 +130,29 @@ public class Board {
 		}
 
 		// move pointer clockwise until blocked
-		while(board[pathStart.y][pathStart.x] != move.getPlayer()){
-			pathStart = nextCell(pathStart, move.getLocation(), true);		
+		
+		while(onBoard(new Point(pathStart.y, pathStart.x)) && board[pathStart.y][pathStart.x] != move.getPlayer()){
+			pathStart = nextCell(pathStart, move.getLocation(), true);	
 		}
 
 		//move pointer counterclockwise until blocked
-		while(board[endCell.y][endCell.x] != move.getPlayer()){
+		while(onBoard(new Point(endCell.y, endCell.x)) && board[endCell.y][endCell.x] != move.getPlayer()){
 			endCell = nextCell(endCell, move.getLocation(), false);		
 		}
 
 		// no more cells to check
 		boolean newPath = true;
 
-		while(pathStart != endCell) {
-			if(newPath && (board[pathStart.y][pathStart.x] != move.getPlayer())) {
+		while(!pathStart.equals(endCell)) {
+			
+			if(!onBoard(new Point(pathStart.y, pathStart.x))){				//not on board
+			} else if(newPath && (board[pathStart.y][pathStart.x] != move.getPlayer())) {	//can path
 				pathfind(pathStart, move, sb);
 				newPath = false;
-			} else if(!newPath && (board[pathStart.y][pathStart.x] == move.getPlayer())) {
+			} else if(!newPath && (board[pathStart.y][pathStart.x] == move.getPlayer())) {	//ready for new path
 				newPath = true;
 			}
+			pathStart = nextCell(pathStart, centerCell, true);
 		}
 
 		return;
@@ -166,7 +174,7 @@ public class Board {
 		// stores variable length lists of possible next cells
 		HashMap<Integer, ArrayList<PointPair>> potentialMoves = new HashMap<Integer, ArrayList<PointPair>>(sb.getMaxScore() + 1);
 
-		for (int a = 0; a < sb.getMaxScore(); a++) {
+		for (int a = 0; a <= sb.getMaxScore(); a++) {
 			potentialMoves.put(a, new ArrayList<PointPair>());
 		}
 
@@ -182,20 +190,19 @@ public class Board {
 		if (onEdge(startPath)) {
 			return;
 		}
-
+		
 		//add cell to explored list, all necessary checks are done
 		exploredList.add(startPath);
 		explored[startPath.y][startPath.x] = 1;
 
 
 		Point currCell = startPath;
-
+		
 		for(i = -1; i <= 1; i++) {
 			for(j = -1; j <= 1; j++) {
-				if(i != 0 && j != 0) {	// not current cell
-					int newRow = (int) currCell.getY() + i;
-					int newCol = (int) currCell.getX() + j;
-
+				if((i != 0) || (j != 0)) {	// not current cell
+					int newRow = (int)currCell.getY() + i;
+					int newCol = (int)currCell.getX() + j;
 					Point nextCell = new Point(newCol, newRow);
 					if (onBoard(nextCell)) {
 						int cellScore = sb.getValue(nextCell);
@@ -213,29 +220,40 @@ public class Board {
 
 
 
-		boolean exhausted = false;
+		boolean exhausted = false,
+				onlyDiag  = true;	// if only unreachable Diags are left than search is done
 
 		while(!exhausted){
+			
+			exhausted = true;
+			onlyDiag = true;
 			outerloop:
 				for(i = sb.getMaxScore(); i >= 0; i--){							// start looking at highest scoring possibles
 					if(!potentialMoves.get(i).isEmpty()) {							// is possible point of score i available?
+							
+						exhausted = false;
+						
 						for(j = 0; j <potentialMoves.get(i).size(); j++){
-
+							Point newP = potentialMoves.get(i).get(j).getNewCell();
+						}
+						
+						for(j = 0; j <potentialMoves.get(i).size(); j++){
+							
 							// there are moves with score i to try
-							PointPair nextTry = potentialMoves.get(i).get(0);
+							PointPair nextTry = potentialMoves.get(i).get(j);
 
 							Point newCell  = nextTry.getNewCell();
 							Point prevCell = nextTry.getPrevCell();
-
+							
 							//check that cell can be moved to
 							if(board[newCell.y][newCell.x] == move.getPlayer()) {
-								potentialMoves.get(i).remove(0);
+								onlyDiag = false;
+								potentialMoves.get(i).remove(j);
 								break outerloop; //restart search through list
 							}
 
 							// if diagonal check for adjacents
 							if((Math.abs(newCell.x - prevCell.x) + Math.abs(newCell.y - prevCell.y)) == 2) { // diagonal movement
-
 								int ownerCellX, ownerCellY;
 
 								ownerCellX = board[prevCell.y + (newCell.y - prevCell.y)][prevCell.x]; //mutually adjacent hori cell
@@ -243,12 +261,17 @@ public class Board {
 
 								// Cannot path to cell if both mutual adjacent cells are player owned
 								if((ownerCellX == move.getPlayer()) && (ownerCellY == move.getPlayer())) {
-									continue;
+									explored[newCell.y][newCell.x] = 0;
+									potentialMoves.get(i).remove(j);
+									onlyDiag = false;
+									break outerloop;
 								}
 							}
-
+							onlyDiag = false;
+							
 							// else can use cell to check
-
+							exploredList.add(newCell);
+							
 							// Are we at one of the edge nodes?
 							if(scoreMap[newCell.y][newCell.x] == sb.getMaxScore()){
 								return;	// no new cells in capture list
@@ -258,11 +281,11 @@ public class Board {
 
 							currCell = newCell;
 
-							for(i = -1; i <= 1; i++) {
-								for(j = -1; j <= 1; j++) {
-									if(i != 0 && j != 0) {	// not current cell
-										int newRow = (int)currCell.getY() + i;
-										int newCol = (int)currCell.getX() + j;
+							for(int k = -1; k <= 1; k++) {
+								for(int l = -1; l <= 1; l++) {
+									if(k != 0 && l != 0) {	// not current cell
+										int newRow = (int)currCell.getY() + k;
+										int newCol = (int)currCell.getX() + l;
 										newCell = new Point(newCol, newRow);
 										if(onBoard(newCell) && (explored[newRow][newCol] == 0)){ // on board, not already in potMoves
 
@@ -271,18 +294,18 @@ public class Board {
 											PointPair newPointPair = new PointPair(newCell, currCell);
 											potentialMoves.get(cellScore).add(newPointPair);
 
-											exploredList.add(newCell);
 											explored[newCell.y][newCell.x] = 1;
 
 										}
 									}
 								}
 							}
+							potentialMoves.get(i).remove(j);
 							break outerloop; // go back to start of potMoves
 						}
 					}
 				}
-		exhausted = true;	// there are no more cells in potentialMoves --> no path to edges
+			if(onlyDiag){exhausted = true;}
 		}
 
 		
@@ -310,9 +333,9 @@ public class Board {
 			boolean bottomLeft  = (currCell.x <  centerCell.x) && (currCell.y >= centerCell.y);
 
 			if 		(topLeft)     return (new Point(currCell.x + 1, currCell.y    ));
-			else if (topRight)    return (new Point(currCell.x    , currCell.y - 1));
+			else if (topRight)    return (new Point(currCell.x    , currCell.y + 1));
 			else if (bottomRight) return (new Point(currCell.x - 1, currCell.y    ));
-			else if (bottomLeft)  return (new Point(currCell.x    , currCell.y + 1));
+			else if (bottomLeft)  return (new Point(currCell.x    , currCell.y - 1));
 
 		} else if(!clockwise){
 			boolean topLeft     = (currCell.x <  centerCell.x) && (currCell.y <= centerCell.y);
@@ -320,9 +343,9 @@ public class Board {
 			boolean bottomRight = (currCell.x >  centerCell.x) && (currCell.y >= centerCell.y);
 			boolean bottomLeft  = (currCell.x <= centerCell.x) && (currCell.y >  centerCell.y);
 
-			if      (topLeft)     return (new Point(currCell.x    , currCell.y - 1));
+			if      (topLeft)     return (new Point(currCell.x    , currCell.y + 1));
 			else if (topRight)    return (new Point(currCell.x - 1, currCell.y    ));
-			else if (bottomRight) return (new Point(currCell.x    , currCell.y + 1));
+			else if (bottomRight) return (new Point(currCell.x    , currCell.y - 1));
 			else if (bottomLeft)  return (new Point(currCell.x + 1, currCell.y    ));
 		}
 		return null;	//ERROR - technically unreachable

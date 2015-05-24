@@ -64,7 +64,7 @@ public class Ajmorton implements Player, Piece {
 		System.out.println("    \n");
 		aj.mainBoard.printBoard();
 		
-		aj.mainBoard.updateBoard(new GameMove(Piece.WHITE, new Point(1, 1)), aj.scoreBoard);
+		aj.mainBoard.updateBoard(new GameMove(Piece.BLACK, new Point(1, 1)), aj.scoreBoard);
 		System.out.println("\nafter    \n");
 		aj.mainBoard.printBoard();
 
@@ -88,9 +88,12 @@ public class Ajmorton implements Player, Piece {
 		this.playerID = p;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(2, 2)));
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 3)));
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(0, 2)));
+		mainBoard.setCell(new GameMove(Piece.BLACK, new Point(3, 2)));
+		mainBoard.setCell(new GameMove(Piece.BLACK, new Point(3, 3)));
+		mainBoard.setCell(new GameMove(Piece.BLACK, new Point(0, 3)));
+		mainBoard.setCell(new GameMove(Piece.BLACK, new Point(2, 1)));
+		mainBoard.setCell(new GameMove(Piece.BLACK, new Point(2, 4)));
+		mainBoard.setCell(new GameMove(Piece.BLACK, new Point(0, 2)));
 
 		this.moves = new ArrayList<GameMove>();
 		
