@@ -1,18 +1,29 @@
 package aiproj.agent.decisionTree;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import aiproj.agent.board.Board;
 
 public class Tree<T> {
 	private Root<T> root;
 	
-	public Tree (Board board) {
-		root = new Root<T>(board);
+	private HashMap<Integer, ArrayList<Node<T>>> leaves;
+	
+	public Tree (T data, Board board) {
+		root = new Root<T>(data, board);
 	}
 	
 	public Root<T> getRoot() {
 		return root;
+	}
+	
+	public void setLeaves(HashMap<Integer, ArrayList<Node<T>>> leaves) {
+		this.leaves = leaves;
+	}
+	
+	public HashMap<Integer, ArrayList<Node<T>>> getLeaves() {
+		return leaves;
 	}
 	
 	public static class Node<T> {
@@ -47,13 +58,33 @@ public class Tree<T> {
 			return parent;
 		}
 		
+		public ArrayList<Node<T>> getChildren() { 
+			return children;
+		}
+		
+		public void setData(T data) {
+			this.data = data;
+		}
+		
+		public void setParent(Node<T> p) {
+			this.parent = p;
+		}
+		
+		public void setChildren(ArrayList<Node<T>> children) {
+			this.children = children;
+		}
+		
 	}
 	
 	public static class Root<T> extends Node<T> {
 		private Board board;
 		
-		public Root(Board board) {
-			super(null, null);
+		public Root(T data, Board board) {
+			super(data, null);
+			this.board = board;
+		}
+		
+		public void setBoard(Board board) {
 			this.board = board;
 		}
 	}

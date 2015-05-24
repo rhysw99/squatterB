@@ -3,6 +3,8 @@ package aiproj.agent.board;
 import aiproj.agent.Ajmorton;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
+import aiproj.agent.decisionTree.GameState;
+import aiproj.agent.decisionTree.Tree.Node;
 import aiproj.squatter.Move;
 import aiproj.squatter.Piece;
 
@@ -25,7 +27,6 @@ public class Board {
 		this.boardSize = boardSize;
 	}
 	
-	
 	/* SETTER */
 	public void setCell(GameMove move) {
 		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
@@ -44,6 +45,10 @@ public class Board {
 		return boardSize;
 	}
 	
+	public int getBoardSpaces() {
+		return boardSize*boardSize;
+	}
+	
 	public byte[][] getBoard() {
 		return board;
 	}
@@ -58,10 +63,10 @@ public class Board {
 		return true;
 	}
 	
-	public void updateBoard(GameMove move) {		
+	public void updateBoard(GameMove move, ScoreBoard sb) {		
 		board[move.getLocation().y][move.getLocation().x] = move.getPlayer();
 		
-		checkCaptures(move);
+		//checkCaptures(move, sb);
 	}
 	
 	public boolean onBoard(Point p) {
@@ -82,8 +87,20 @@ public class Board {
 		return false;
 	}
 	
+	// TODO CHANGE THIS FUNCTION
+	public boolean isFull() {
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				if (board[j][i] == Piece.EMPTY) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
 	
-	private void checkCaptures(GameMove move) {
+	
+	private void checkCaptures(GameMove move, ScoreBoard sb) {
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
 		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
 		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
@@ -96,7 +113,7 @@ public class Board {
 		// can path from startCell, else path from next available cell
 		// if no paths are possible, end
 		if(board[startCell.y][startCell.x] != move.getPlayer()){
-			pathfind(startCell, move);
+			pathfind(startCell, move, sb);
 		} else {
 			pathStart = nextCell(pathStart, move.getLocation(), true);
 			while(board[pathStart.y][pathStart.x] == move.getPlayer()){
@@ -105,7 +122,7 @@ public class Board {
 					return;
 				}
 			}
-			pathfind(pathStart, move);
+			pathfind(pathStart, move, sb);
 		}
 
 		// move pointer clockwise until blocked
@@ -123,7 +140,7 @@ public class Board {
 
 		while(pathStart != endCell) {
 			if(newPath && (board[pathStart.y][pathStart.x] != move.getPlayer())) {
-				pathfind(pathStart, move);
+				pathfind(pathStart, move, sb);
 				newPath = false;
 			} else if(!newPath && (board[pathStart.y][pathStart.x] == move.getPlayer())) {
 				newPath = true;
@@ -139,8 +156,7 @@ public class Board {
 		// in particular if startCell is necessary, can't be replace by endCell
 	}
 	
-	private void pathfind(Point startPath, GameMove move) {
-		ScoreBoard sb = Ajmorton.getScoreBoard();
+	private void pathfind(Point startPath, GameMove move, ScoreBoard sb) {
 		byte[][] explored = new byte[boardSize][boardSize];
 		byte[][] scoreMap = sb.getBoard();
 		
@@ -290,7 +306,7 @@ public class Board {
 		return;
 	}
 	
-	private static Point nextCell(Point currCell, Point centerCell, boolean clockwise){
+	private static Point nextCell(Point currCell, Point centerCell, boolean clockwise) {
 		// TODO	
 		// consolidate into fewer cycles, messier code
 		if(clockwise){
@@ -318,8 +334,81 @@ public class Board {
 		return null;	//ERROR - technically unreachable
 	}
 	
-	/* TEST FUNCTION */
+	public static boolean checkUniqueStates(Board a, Board b) {
+		byte[][] aBoard = a.getBoard();
+		byte[][] bBoard = b.getBoard();
+		for (int j = 0; j < a.getBoardSize(); j++) {
+			for (int i = 0; i < a.getBoardSize(); i++) {
+				//TODO Add in this algorithm
+			}
+		}
+		return false;
+	}
 	
+	public Board transform(int i) {
+		switch (i) {
+			case 0:
+				return transform90CW();
+			case 1:
+				return transform90CCW();
+			case 2:
+				return transform180();
+			case 3:
+				return transformFlipVertical();
+			case 4:
+				return transformFlipHorizontal();
+			case 5:
+				return transformFlipMajorDiagonal();
+			case 6:
+				return transformFlipMinorDiagonal();
+			default:
+				return null;
+		}		
+	}
+	
+	private Board transform90CW() {
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(boardSize-j-1, i));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
+	}
+	
+	private Board transform90CCW() {
+		// TODO Auto-generated method stub
+		return this;
+	}
+
+	private Board transform180() {
+		// TODO Auto-generated method stub
+		return this;
+	}
+
+	private Board transformFlipVertical() {
+		// TODO Auto-generated method stub
+		return this;
+	}
+
+	private Board transformFlipHorizontal() {
+		// TODO Auto-generated method stub
+		return this;
+	}
+
+	private Board transformFlipMajorDiagonal() {
+		// TODO Auto-generated method stub
+		return this;
+	}
+
+	private Board transformFlipMinorDiagonal() {
+		// TODO Auto-generated method stub
+		return this;
+	}
+	
+	/* TEST FUNCTION */
+
 	public void printBoard() {
 		System.out.println("printing scoreboard");
 		System.out.println("board size: "+boardSize);

@@ -1,5 +1,7 @@
 package aiproj.agent.decisionTree;
 
+import aiproj.agent.board.Board;
+
 /* Not sure what to call this */
 public class GameState {
 	
@@ -7,6 +9,8 @@ public class GameState {
 	private GameMove move;
 	
 	private boolean[] transformFlags;
+	
+	private int score = 0;
 	
 	private static final byte ROTATE_90_CW = 0;
 	private static final byte ROTATE_90_CCW = 1;
@@ -23,11 +27,34 @@ public class GameState {
 			transformFlags = parent.transformFlags;
 		} else {
 			transformFlags = new boolean[7];
+			for (int i = 0; i < transformFlags.length; i++) {
+				transformFlags[i] = true;
+			}
 		}
 	}
 
 	public GameMove getMove() {
 		return move;
+	}
+	
+	public void calculateScore(Board b) {
+		score = 20 + (int) (Math.random()*500000);
+	}
+	
+	public int getScore() {
+		return score;
+	}
+	
+	public boolean[] getTransformFlags() {
+		return transformFlags;
+	}
+	
+	public void setTransformFlag(int flagId, boolean value) {
+		this.transformFlags[flagId] = value;
+	}
+
+	public void setScore(int score) {
+		this.score = score;		
 	}
 
 	
