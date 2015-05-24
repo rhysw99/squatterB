@@ -38,7 +38,7 @@ public class Ajmorton implements Player, Piece {
 	
 	public static void main(String[] args) {
 		System.out.println("test");
-		/*
+		
 		Ajmorton aj = new Ajmorton();
 		aj.init(5, 1);
 		
@@ -56,8 +56,10 @@ public class Ajmorton implements Player, Piece {
 			aj.mainBoard.printBoard();
 			System.out.println("=================");
 		}
-		aj.mainBoard.printBoard();
-		*/
+		
+		
+		
+		/*
 		
 		Ajmorton aj = new Ajmorton();
 		aj.init(5, 1);
@@ -67,7 +69,7 @@ public class Ajmorton implements Player, Piece {
 		aj.mainBoard.updateBoard(new GameMove(Piece.WHITE, new Point(1, 1)), aj.scoreBoard);
 		System.out.println("\nafter    \n");
 		aj.mainBoard.printBoard();
-
+*/
 		
 		
 	}
@@ -88,9 +90,9 @@ public class Ajmorton implements Player, Piece {
 		this.playerID = p;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(2, 2)));
+		/*mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 1)));
 		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 3)));
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(0, 2)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(0, 2)));*/
 
 		this.moves = new ArrayList<GameMove>();
 		
@@ -115,10 +117,12 @@ public class Ajmorton implements Player, Piece {
 	
 			while (it.hasNext()) {
 				Node<GameState> n = it.next();
+				System.out.println("Evaluation score: "+n.getData().getScore());
 				if (best == null || n.getData().getScore() > best.getData().getScore()) {
 					best = n;
 				}
 			}
+			System.out.println("Best score: "+best.getData().getScore());
 			gm = best.getData().getMove();
 		}
 		
@@ -193,30 +197,20 @@ public class Ajmorton implements Player, Piece {
 		Stack<Node<GameState>> nodes = new Stack<Node<GameState>>();
 		nodes.push(root);
 		
-		Board tBoard = new Board(mainBoard.getBoard(), mainBoard.getBoardSize());
 
 		int maxDepth = depth + MAX_PLY;
 		maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
 		while (!nodes.isEmpty()) {
 			Node<GameState> currentNode = nodes.pop();
 			
-			//System.out.println("=======");
-			//System.out.println("max depth: "+maxDepth);
-			//mainBoard.printBoard();
+			Board parentBoard = Board.copy(mainBoard);
 			
 			/* Set board for all parent states */
 			Node<GameState> parentNode = currentNode.getParent();
 			while (parentNode != null) {
 				if (parentNode.getData() != null) {
 					if (parentNode.getData().getMove() != null) {
-						//System.out.println("Parent depth: "+parentNode.getData().getDepth());
-						//tBoard.setCell(parentNode.getData().getMove());
-						/*try {
-							Thread.sleep(100);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}*/
+						parentBoard.updateBoard(parentNode.getData().getMove(), scoreBoard);
 					}
 				}
 				parentNode = parentNode.getParent();
@@ -228,40 +222,31 @@ public class Ajmorton implements Player, Piece {
 				continue;
 			}
 			
+			//parentBoard.printBoard();
+			
 			for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 				for (int i = 0; i < mainBoard.getBoardSize(); i++) {
 					//TODO Switch to new move class?
 					GameMove m = new GameMove(p, new Point(i, j));
 
-					if (tBoard.isLegal(m)) {
-						//tBoard.setCell(m);
+					if (parentBoard.isLegal(m)) {
+						Board tBoard = Board.copy(mainBoard);
+						tBoard.updateBoard(m, scoreBoard);
 						if (DEBUG) System.out.println("d: "+depth+" - j: "+j+" - i: "+i);
 						if (DEBUG) tBoard.printBoard();
 
 						GameState newGS = new GameState(root.getData(), m);
 						Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
-						newNode.getData().calculateScore(tBoard);
-						//System.out.println("Create node: "+currentNode.getData().getDepth());
-						//System.out.println("Max depth: "+maxDepth);
 						newNode.getData().setDepth(currentNode.getData().getDepth() + 1);
-						if (currentNode.getData().getDepth() == maxDepth) {
-							System.out.println("DEPTH ERROR");
+						if (currentNode.getData().getDepth() == (maxDepth-1)) {
+							newNode.getData().calculateScore(tBoard);
+							//System.out.println("Gen score: "+newNode.getData().getScore() + " - Depth: "+newNode.getData().getDepth());
 						}
 						currentNode.insert(newNode);
 						nodes.add(newNode);
-						//tBoard.resetCell(m);
+						tBoard = null;
 					}
 				}
-			}
-			/* Reset board for all parent states */
-			parentNode = currentNode.getParent();
-			while (parentNode != null) {
-				if (parentNode.getData() != null) {
-					if (parentNode.getData().getMove() != null) {
-						//tBoard.resetCell(parentNode.getData().getMove());
-					}
-				}
-				parentNode = parentNode.getParent();
 			}
 			// END OF TURN
 			p = ((p == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);

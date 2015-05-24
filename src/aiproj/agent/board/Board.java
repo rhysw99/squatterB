@@ -66,7 +66,7 @@ public class Board {
 	public void updateBoard(GameMove move, ScoreBoard sb) {		
 		board[move.getLocation().y][move.getLocation().x] = move.getPlayer();
 
-		checkCaptures(move, sb);
+		//checkCaptures(move, sb);
 	}
 
 	public boolean onBoard(Point p) {
@@ -85,6 +85,20 @@ public class Board {
 			return true;						
 		}
 		return false;
+	}
+	
+	public static Board copy(Board b) {
+		int size = b.getBoardSize();
+		byte[][] board = b.getBoard();
+		byte[][] newBoard = new byte[size][size];
+		
+		for (int j = 0; j < size; j++) {
+			for (int i = 0; i < size; i++) {
+				newBoard[j][i] = board[j][i];
+			}
+		}
+		
+		return new Board(newBoard, size);
 	}
 
 	// TODO CHANGE THIS FUNCTION
@@ -113,6 +127,7 @@ public class Board {
 		// can path from startCell, else path from next available cell
 		// if no paths are possible, end
 		if(board[startCell.y][startCell.x] != move.getPlayer()){
+			System.out.println("yes");
 			pathfind(startCell, move, sb);
 		} else {
 			pathStart = nextCell(pathStart, move.getLocation(), true);
