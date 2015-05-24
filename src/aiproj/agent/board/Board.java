@@ -66,7 +66,7 @@ public class Board {
 	public void updateBoard(GameMove move, ScoreBoard sb) {		
 		board[move.getLocation().y][move.getLocation().x] = move.getPlayer();
 
-		//checkCaptures(move, sb);
+		checkCaptures(move, sb);
 	}
 
 	public boolean onBoard(Point p) {

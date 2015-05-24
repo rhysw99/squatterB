@@ -38,6 +38,7 @@ public class Ajmorton implements Player, Piece {
 	
 	public static void main(String[] args) {
 		System.out.println("test");
+		/*
 		Ajmorton aj = new Ajmorton();
 		aj.init(5, 1);
 		
@@ -56,6 +57,18 @@ public class Ajmorton implements Player, Piece {
 			System.out.println("=================");
 		}
 		aj.mainBoard.printBoard();
+		*/
+		
+		Ajmorton aj = new Ajmorton();
+		aj.init(5, 1);
+		System.out.println("    \n");
+		aj.mainBoard.printBoard();
+		
+		aj.mainBoard.updateBoard(new GameMove(Piece.WHITE, new Point(1, 1)), aj.scoreBoard);
+		System.out.println("\nafter    \n");
+		aj.mainBoard.printBoard();
+
+		
 		
 	}
 	
@@ -75,11 +88,10 @@ public class Ajmorton implements Player, Piece {
 		this.playerID = p;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(0, 2)));
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 1)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(2, 2)));
 		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(1, 3)));
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(3, 1)));
-		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(3, 3)));
+		mainBoard.setCell(new GameMove(Piece.WHITE, new Point(0, 2)));
+
 		this.moves = new ArrayList<GameMove>();
 		
 		this.currentPlayer = Piece.WHITE;
