@@ -4,12 +4,11 @@ package aiproj.agent;
 import java.awt.Point;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Stack;
 
 import aiproj.agent.board.Board;
 import aiproj.agent.board.ScoreBoard;
-import aiproj.agent.board.Update;
 import aiproj.agent.decisionTree.GameMove;
 import aiproj.agent.decisionTree.GameState;
 import aiproj.agent.decisionTree.Tree;
@@ -43,6 +42,7 @@ public class Ajmorton implements Player, Piece {
 		aj.init(5, 1);
 		
 		while (!aj.mainBoard.isFull()) {
+			//System.out.println("New cycle");
 			aj.makeMove();
 			GameMove gm = new GameMove(aj.currentPlayer, new Point(1,2));
 			while (!aj.mainBoard.isLegal(gm) && !aj.mainBoard.isFull()) {
@@ -53,7 +53,9 @@ public class Ajmorton implements Player, Piece {
 			aj.opponentMove(GameMove.getMove(gm));
 			
 			aj.mainBoard.printBoard();
+			System.out.println("=================");
 		}
+		aj.mainBoard.printBoard();
 		
 	}
 	
@@ -87,27 +89,30 @@ public class Ajmorton implements Player, Piece {
 
 	
 	public Move makeMove() {
+		GameMove gm;
 		if (currentMove == 0) {
-			GameMove gm = new GameMove(Piece.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2));
-			return GameMove.getMove(gm);
-		}
-		Tree<GameState> decisionTree = buildTree();
-		cycleUp(decisionTree);
-		
-		int maxDepth = currentMove+MAX_PLY;
-		maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
-		
-		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().iterator();
-		Node<GameState> best = null;
-
-		while (it.hasNext()) {
-			Node<GameState> n = it.next();
-			if (best == null || n.getData().getScore() > best.getData().getScore()) {
-				best = n;
+			gm = new GameMove(Piece.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2));
+		} else {
+			System.out.println("pre tree");
+			Tree<GameState> decisionTree = buildTree();
+			System.out.println("post tree");
+			
+			int maxDepth = currentMove+MAX_PLY;
+			maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
+			
+			Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().iterator();
+			Node<GameState> best = null;
+	
+			while (it.hasNext()) {
+				Node<GameState> n = it.next();
+				if (best == null || n.getData().getScore() > best.getData().getScore()) {
+					best = n;
+				}
+				System.out.println("Evaluation function: "+n.getData().getScore());
 			}
-			if (DEBUG) System.out.println("Evaluation function: "+n.getData().getScore());
+			System.out.println("Choosing score: "+best.getData().getScore());
+			gm = best.getData().getMove();
 		}
-		GameMove gm = best.getData().getMove();
 		
 		makeMove(gm);
 		
@@ -117,26 +122,15 @@ public class Ajmorton implements Player, Piece {
 		return GameMove.getMove(gm);
 	}
 	
-	private void cycleUp(Tree<GameState> decisionTree) {
-		int maxDepth = currentMove+MAX_PLY;
-		maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
-		
-		HashMap<Integer, ArrayList<Node<GameState>>> leaves = decisionTree.getLeaves();
-		
-		for (int d = maxDepth; d > currentMove; d--) {
-			ArrayList<Node<GameState>> it = leaves.get(d);
-			while (!it.isEmpty()) {
-				Node<GameState> child = it.get(0);
-				if (child.getParent() != null) {
-					if (child.getParent().getData().getScore() > child.getData().getScore()) {
-						child.getParent().getData().setScore(child.getData().getScore());
-					}
-					if (!leaves.get(d-1).contains(child.getParent())) {
-						leaves.get(d-1).add(child.getParent());
-					}
-				}
-				it.remove(0);
+	private void cycleUp(Node<GameState> node) {
+		int depth = node.getData().getDepth();
+		while (depth > currentMove) {
+			Node<GameState> parent = node.getParent();
+			if (node.getData().getScore() < parent.getData().getScore()) {
+				parent.getData().setScore(node.getData().getScore());
 			}
+			node = parent;
+			depth--;
 		}
 	}
 	
@@ -152,7 +146,8 @@ public class Ajmorton implements Player, Piece {
 		if(!mainBoard.isLegal(gm)) {
 			return FAILURE;
 		}
-			
+		
+		System.out.println("OPPONENT MOVE");
 		mainBoard.updateBoard(gm, scoreBoard);
 		
 		currentMove++;
@@ -182,175 +177,100 @@ public class Ajmorton implements Player, Piece {
 	public Tree<GameState> buildTree() {
 		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null), new Board(mainBoard.getBoardSize()));
 		Root<GameState> root = decisionTree.getRoot();
-		
-		HashMap<Integer, ArrayList<Node<GameState>>> leaves = new HashMap<Integer, ArrayList<Node<GameState>>>();
-		/* Generate empty leaves ArrayLists */
-		for (int i = currentMove; i <= currentMove+MAX_PLY; i++) {
-			ArrayList<Node<GameState>> l = new ArrayList<Node<GameState>>();
-			leaves.put(i, l);
-		}
-		
+
 		int p = currentPlayer;
 		int depth = currentMove;
+
+		root.getData().setDepth(depth);
+		Stack<Node<GameState>> nodes = new Stack<Node<GameState>>();
+		nodes.push(root);
 		
 		Board tBoard = new Board(mainBoard.getBoard(), mainBoard.getBoardSize());
-		leaves.get(depth).add(root);
-			
+
 		int maxDepth = depth + MAX_PLY;
 		maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
-		for (; depth < maxDepth; depth++) {
-			while (!leaves.get(depth).isEmpty()) {
-				Node<GameState> currentNode = leaves.get(depth).get(0);
-				leaves.get(depth).remove(0);
-
-				/* Set board for all parent states */
-				Node<GameState> parentNode = currentNode;
-				while (parentNode != null) {
-					if (parentNode.getData() != null) {
-						if (parentNode.getData().getMove() != null) {
-							tBoard.setCell(parentNode.getData().getMove());
-						}
-					}
-					parentNode = parentNode.getParent();
-				}
-
-				checkUniqueTransforms(currentNode, tBoard);
-
-				for (int j = 0; j < mainBoard.getBoardSize(); j++) {
-					for (int i = 0; i < mainBoard.getBoardSize(); i++) {
-						//TODO Switch to new move class?
-						GameMove m = new GameMove(p, new Point(i, j));
-
-						if (tBoard.isLegal(m)) {
-							tBoard.setCell(m);
-							if (DEBUG) System.out.println("d: "+depth+" - j: "+j+" - i: "+i);
-							if (DEBUG) tBoard.printBoard();
-
-							GameState newGS = new GameState(root.getData(), m);
-							Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
-							newNode.getData().calculateScore(tBoard);
-							currentNode.insert(newNode);
-							leaves.get(depth+1).add(newNode);
-							tBoard.resetCell(m);
-						}
+		while (!nodes.isEmpty()) {
+			Node<GameState> currentNode = nodes.pop();
+			
+			//System.out.println("=======");
+			//System.out.println("max depth: "+maxDepth);
+			//mainBoard.printBoard();
+			
+			/* Set board for all parent states */
+			Node<GameState> parentNode = currentNode.getParent();
+			while (parentNode != null) {
+				if (parentNode.getData() != null) {
+					if (parentNode.getData().getMove() != null) {
+						//System.out.println("Parent depth: "+parentNode.getData().getDepth());
+						//tBoard.setCell(parentNode.getData().getMove());
+						/*try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}*/
 					}
 				}
-				/* Reset board for all parent states */
-				parentNode = currentNode;
-				while (parentNode != null) {
-					if (parentNode.getData() != null) {
-						if (parentNode.getData().getMove() != null) {
-							tBoard.resetCell(parentNode.getData().getMove());
+				parentNode = parentNode.getParent();
+			}
+
+			
+			if (currentNode.getData().getDepth() >= maxDepth) {
+				cycleUp(currentNode);
+				continue;
+			}
+			
+			for (int j = 0; j < mainBoard.getBoardSize(); j++) {
+				for (int i = 0; i < mainBoard.getBoardSize(); i++) {
+					//TODO Switch to new move class?
+					GameMove m = new GameMove(p, new Point(i, j));
+
+					if (tBoard.isLegal(m)) {
+						//tBoard.setCell(m);
+						if (DEBUG) System.out.println("d: "+depth+" - j: "+j+" - i: "+i);
+						if (DEBUG) tBoard.printBoard();
+
+						GameState newGS = new GameState(root.getData(), m);
+						Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
+						newNode.getData().calculateScore(tBoard);
+						//System.out.println("Create node: "+currentNode.getData().getDepth());
+						//System.out.println("Max depth: "+maxDepth);
+						newNode.getData().setDepth(currentNode.getData().getDepth() + 1);
+						if (currentNode.getData().getDepth() == maxDepth) {
+							System.out.println("DEPTH ERROR");
 						}
+						currentNode.insert(newNode);
+						nodes.add(newNode);
+						//tBoard.resetCell(m);
 					}
-					parentNode = parentNode.getParent();
 				}
+			}
+			/* Reset board for all parent states */
+			parentNode = currentNode.getParent();
+			while (parentNode != null) {
+				if (parentNode.getData() != null) {
+					if (parentNode.getData().getMove() != null) {
+						//tBoard.resetCell(parentNode.getData().getMove());
+					}
+				}
+				parentNode = parentNode.getParent();
 			}
 			// END OF TURN
 			p = ((p == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+			
+			// Clean up child nodes
+			if (currentNode.getData().getDepth() > currentMove) {
+				currentNode.setChildren(null);
+			}
 		}
-		// END OF TREE GEN
-		
-		decisionTree.setLeaves(leaves);
-		
+
 		return decisionTree;
 	}
 	
-	/*public void buildTree() {
-		Tree<GameState> decisionTree = new Tree<GameState>(new Board(mainBoard.getBoardSize()));
-		Root<GameState> root = decisionTree.getRoot();
+	private void generateChild(Node<GameState> n) {
 		
-		HashMap<Integer, ArrayList<Node<GameState>>> leaves = new HashMap<Integer, ArrayList<Node<GameState>>>();
-		 Generate empty leaves ArrayLists 
-		for (int i = 0; i <= Math.pow(mainBoard.getBoardSize(), 2); i++) {
-			ArrayList<Node<GameState>> l = new ArrayList<Node<GameState>>();
-			leaves.put(i, l);
-		}
-		
-		int p = Piece.WHITE;
-		int depth = 0;
-		
-		while(!mainBoard.isFull()) {
-			Board tBoard = new Board(mainBoard.getBoard(), mainBoard.getBoardSize());
-			leaves.get(depth).add(root);
-			
-			int maxDepth = depth + (depth*MAX_PLY)/mainBoard.getBoardSpaces() + 2;
-			maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
-			for (; depth < maxDepth; depth++) {
-				System.out.println("depth: "+depth);
-				while (!leaves.get(depth).isEmpty()) {
-					Node<GameState> currentNode = leaves.get(depth).get(0);
-					leaves.get(depth).remove(0);
-					
-					 Set board for all parent states 
-					Node<GameState> parentNode = currentNode;
-					while (parentNode != null) {
-						if (parentNode.getData() != null) {
-							tBoard.setCell(parentNode.getData().getMove());
-						}
-						parentNode = parentNode.getParent();
-					}
-					
-					for (int j = 0; j < mainBoard.getBoardSize(); j++) {
-						for (int i = 0; i < mainBoard.getBoardSize(); i++) {
-							//TODO Switch to new move class?
-							GameMove m = new GameMove(p, new Point(i, j));
-							
-							if (mainBoard.isLegal(m)) {
-								tBoard.setCell(m);
-								if (DEBUG) System.out.println("d: "+depth+" - j: "+j+" - i: "+i);
-								if (DEBUG) tBoard.printBoard();
-								
-								GameState newGS = new GameState(root.getData(), m);
-								Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
-								newNode.getData().calculateScore(tBoard);
-								currentNode.insert(newNode);
-								leaves.get(depth+1).add(newNode);
-								tBoard.resetCell(m);
-							}
-							try {
-								if (DEBUG) Thread.sleep(200);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
-					parentNode = currentNode;
-					while (parentNode != null) {
-						if (parentNode.getData() != null) {
-							tBoard.resetCell(parentNode.getData().getMove());
-						}
-						parentNode = parentNode.getParent();
-					}
-				}
-				// END OF TURN
-				p = ((p == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
-			}
-			// END OF TREE GEN
-			Iterator<Node<GameState>> it = leaves.get(depth).iterator();
-			Node<GameState> best = null;
-			
-			while (it.hasNext()) {
-				Node<GameState> n = it.next();
-				if (best == null || n.getData().getScore() > best.getData().getScore()) {
-					best = n;
-				}
-				if (DEBUG) System.out.println("Evaluation function: "+n.getData().getScore());
-			}
-			// No children, hence board is full!
-			if (best == null) {
-				break;			
-			}
-			makeMoves(best);
-			mainBoard.printBoard();
-			
-			root = new Root<GameState>(new Board(mainBoard.getBoard(), mainBoard.getBoardSize()));
-			root.setChildren(best.getChildren());
-			leaves.get(depth).clear();
-		}
-		
-	}*/
+	}
+
 	
 	private void checkUniqueTransforms(Node<GameState> currentNode, Board tBoard) {
 		GameState gs = currentNode.getData();
@@ -369,7 +289,8 @@ public class Ajmorton implements Player, Piece {
 	
 
 	public void makeMove(GameMove m) {
-		mainBoard.setCell(m);
+		System.out.println("Move: X:"+m.getLocation().x+" - y: "+m.getLocation().y+" - player: "+m.getPlayer());
+		mainBoard.updateBoard(m, scoreBoard);
 		moves.add(m);
 	}
 	

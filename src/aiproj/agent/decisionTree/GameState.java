@@ -12,6 +12,8 @@ public class GameState {
 	
 	private int score = 0;
 	
+	private int depth = 0;
+	
 	private static final byte ROTATE_90_CW = 0;
 	private static final byte ROTATE_90_CCW = 1;
 	private static final byte ROTATE_180 = 2;
@@ -57,5 +59,12 @@ public class GameState {
 		this.score = score;		
 	}
 
+	public void setDepth(int depth) {
+		this.depth = depth;
+	}
+	
+	public int getDepth() {
+		return depth;
+	}
 	
 }

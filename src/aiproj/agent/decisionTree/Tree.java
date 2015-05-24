@@ -8,22 +8,12 @@ import aiproj.agent.board.Board;
 public class Tree<T> {
 	private Root<T> root;
 	
-	private HashMap<Integer, ArrayList<Node<T>>> leaves;
-	
 	public Tree (T data, Board board) {
 		root = new Root<T>(data, board);
 	}
 	
 	public Root<T> getRoot() {
 		return root;
-	}
-	
-	public void setLeaves(HashMap<Integer, ArrayList<Node<T>>> leaves) {
-		this.leaves = leaves;
-	}
-	
-	public HashMap<Integer, ArrayList<Node<T>>> getLeaves() {
-		return leaves;
 	}
 	
 	public static class Node<T> {
