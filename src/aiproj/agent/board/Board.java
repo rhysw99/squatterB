@@ -1,6 +1,7 @@
 package aiproj.agent.board;
 
 import aiproj.agent.Ajmorton;
+import aiproj.agent.Miscellaneous;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
 import aiproj.agent.decisionTree.GameState;
@@ -11,6 +12,8 @@ import aiproj.squatter.Piece;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 public class Board {	
 	protected byte[][] board;			//the game board
@@ -63,11 +66,8 @@ public class Board {
 		return true;
 	}
 
-	public void updateBoard(GameMove move, ScoreBoard sb) {		
+	public void updateBoard(GameMove move) {		
 		board[move.getLocation().y][move.getLocation().x] = move.getPlayer();
-
-
-		//checkCaptures(move, sb);
 	}
 
 	public boolean onBoard(Point p) {
@@ -114,69 +114,61 @@ public class Board {
 		return true;
 	}
 
+	
+	//TODO Move this somewhere
+	private Point addPoints(Point a, Point b) {
+		return new Point(a.x+b.x, a.y+b.y);
+	}
 
-	private void checkCaptures(GameMove move, ScoreBoard sb) {
-		
-		
+	public void checkCaptures(GameMove move, ScoreBoard sb) {
+		//System.out.println("Move: x: "+move.getLocation().x+ " - y: "+move.getLocation().y+" - p: "+move.getPlayer());
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
 		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
 		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
 
-		Point startCell = new Point(move.getLocation().x + xOffset, move.getLocation().y + yOffset);
 		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
-		
-		Point pathStart = new Point(startCell);
-		Point endCell = new Point(startCell);
+		Point offset = new Point(xOffset, yOffset);
+		Point pathStart = addPoints(centerCell, offset);
+		Point endCell = new Point(pathStart);
 
-		// can path from startCell, else path from next available cell
-		// if no paths are possible, end
-		if(board[startCell.y][startCell.x] != move.getPlayer()){
-			System.out.println("yes");
-			pathfind(startCell, move, sb);
-		} else {
-			pathStart = nextCell(pathStart, move.getLocation(), true);
-			while(board[pathStart.y][pathStart.x] == move.getPlayer()){
-				pathStart = nextCell(pathStart, move.getLocation(), true);
-				if(pathStart == endCell) {
-					return;
+		ArrayList<Point> startingPaths = new ArrayList<Point>();
+		
+		while (!onBoard(pathStart) || board[pathStart.y][pathStart.x] != move.getPlayer()) {
+			offset = Miscellaneous.nextCell(offset);
+			pathStart = addPoints(offset, centerCell);
+			// We have cycled around with with no possible points to start pathing from, therefore no captures.
+			if (pathStart.equals(endCell)) {
+				return;
+			}
+		}
+		
+		// We have found a piece surrounding the move that matches!
+		endCell = new Point(pathStart);
+		offset = Miscellaneous.nextCell(offset);
+		pathStart = addPoints(offset, centerCell);
+
+		boolean newPath = true;
+		while (!pathStart.equals(endCell)) {
+			if (onBoard(pathStart)) {
+				if (board[pathStart.y][pathStart.x] != move.getPlayer()) {
+					if (newPath) {
+						startingPaths.add(new Point(pathStart));
+						newPath = false;
+					} else {
+						newPath = true;
+					}
 				}
 			}
-			pathfind(pathStart, move, sb);
-		}
-
-		// move pointer clockwise until blocked
+			offset = Miscellaneous.nextCell(offset);
+			pathStart = addPoints(offset, centerCell);
+		}		
 		
-		while(onBoard(new Point(pathStart.y, pathStart.x)) && board[pathStart.y][pathStart.x] != move.getPlayer()){
-			pathStart = nextCell(pathStart, move.getLocation(), true);	
+		// Loop through all our starting points and attempt to pathfind to edge from there
+		Iterator<Point> it = startingPaths.iterator();
+		while(it.hasNext()) {
+			Point p = it.next();
+			pathfind(p, move, sb);
 		}
-
-		//move pointer counterclockwise until blocked
-		while(onBoard(new Point(endCell.y, endCell.x)) && board[endCell.y][endCell.x] != move.getPlayer()){
-			endCell = nextCell(endCell, move.getLocation(), false);		
-		}
-
-		// no more cells to check
-		boolean newPath = true;
-
-		while(!pathStart.equals(endCell)) {
-			
-			if(!onBoard(new Point(pathStart.y, pathStart.x))){				//not on board
-			} else if(newPath && (board[pathStart.y][pathStart.x] != move.getPlayer())) {	//can path
-				pathfind(pathStart, move, sb);
-				newPath = false;
-			} else if(!newPath && (board[pathStart.y][pathStart.x] == move.getPlayer())) {	//ready for new path
-				newPath = true;
-			}
-			pathStart = nextCell(pathStart, centerCell, true);
-		}
-
-		return;
-
-		// TODO
-		// consider Points not in board range
-
-		// look over start point detections
-		// in particular if startCell is necessary, can't be replace by endCell
 	}
 
 	private void pathfind(Point startPath, GameMove move, ScoreBoard sb) {
@@ -233,13 +225,10 @@ public class Board {
 
 		// end initial cell check
 
-
-
 		boolean exhausted = false,
 				onlyDiag  = true;	// if only unreachable Diags are left than search is done
 
 		while(!exhausted){
-			
 			exhausted = true;
 			onlyDiag = true;
 			outerloop:
@@ -296,13 +285,13 @@ public class Board {
 
 							currCell = newCell;
 
-							for(int k = -1; k <= 1; k++) {
-								for(int l = -1; l <= 1; l++) {
-									if(k != 0 && l != 0) {	// not current cell
+							for (int k = -1; k <= 1; k++) {
+								for (int l = -1; l <= 1; l++) {
+									if (k != 0 && l != 0) {	// not current cell
 										int newRow = (int)currCell.getY() + k;
 										int newCol = (int)currCell.getX() + l;
 										newCell = new Point(newCol, newRow);
-										if(onBoard(newCell) && (explored[newRow][newCol] == 0)){ // on board, not already in potMoves
+										if(onBoard(newCell) && (explored[newRow][newCol] == 0)) { // on board, not already in potMoves
 
 											int cellScore = scoreMap[newRow][newCol];
 
@@ -320,12 +309,14 @@ public class Board {
 						}
 					}
 				}
-			if(onlyDiag){exhausted = true;}
+			if(onlyDiag) {
+				exhausted = true;
+			}
 		}
 
 		
 		// cells can be added to the captures
-		while(!exploredList.isEmpty()){
+		while(!exploredList.isEmpty()) {
 			int x = exploredList.get(0).x;
 			int y = exploredList.get(0).y;
 			//TODO Change piece structure
@@ -338,47 +329,7 @@ public class Board {
 		return;
 	}
 
-	private static Point nextCell(Point currCell, Point centerCell, boolean clockwise) {
-		// TODO	
-		// consolidate into fewer cycles, messier code
-		if(clockwise){
-			boolean topLeft     = (currCell.x <= centerCell.x) && (currCell.y <  centerCell.y);
-			boolean topRight    = (currCell.x >  centerCell.x) && (currCell.y <= centerCell.y);	
-			boolean bottomRight = (currCell.x >= centerCell.x) && (currCell.y >  centerCell.y);
-			boolean bottomLeft  = (currCell.x <  centerCell.x) && (currCell.y >= centerCell.y);
-
-			if 		(topLeft)     return (new Point(currCell.x + 1, currCell.y    ));
-			else if (topRight)    return (new Point(currCell.x    , currCell.y + 1));
-			else if (bottomRight) return (new Point(currCell.x - 1, currCell.y    ));
-			else if (bottomLeft)  return (new Point(currCell.x    , currCell.y - 1));
-
-		} else if(!clockwise){
-			boolean topLeft     = (currCell.x <  centerCell.x) && (currCell.y <= centerCell.y);
-			boolean topRight    = (currCell.x >= centerCell.x) && (currCell.y <  centerCell.y);	
-			boolean bottomRight = (currCell.x >  centerCell.x) && (currCell.y >= centerCell.y);
-			boolean bottomLeft  = (currCell.x <= centerCell.x) && (currCell.y >  centerCell.y);
-
-			if      (topLeft)     return (new Point(currCell.x    , currCell.y + 1));
-			else if (topRight)    return (new Point(currCell.x - 1, currCell.y    ));
-			else if (bottomRight) return (new Point(currCell.x    , currCell.y - 1));
-			else if (bottomLeft)  return (new Point(currCell.x + 1, currCell.y    ));
-		}
-		return null;	//ERROR - technically unreachable
-	}
-
-	public static boolean checkUniqueStates(Board a, Board b) {
-		byte[][] aBoard = a.getBoard();
-		byte[][] bBoard = b.getBoard();
-		for (int j = 0; j < a.getBoardSize(); j++) {
-			for (int i = 0; i < a.getBoardSize(); i++) {
-				//TODO Add in this algorithm
-			}
-		}
-		return false;
-	}
-
 	private void captureCell(GameMove capMove){
-		
 		// TODO cell values (1==BLACK etc are still not set, suggest following modified Peice interface)
 		
 		int y = (int)capMove.getLocation().getY();
@@ -412,33 +363,51 @@ public class Board {
 		}
 		return;				
 	}
+	
+	public static boolean checkUniqueStates(Board a, Board b, GameMove m) {
+		byte[][] aBoard = a.getBoard();
+		byte[][] bBoard = b.getBoard();
+		int x = m.getLocation().x;
+		int y = m.getLocation().y;
+		if (aBoard[y][x] == Piece.BLACK && bBoard[y][x] == Piece.WHITE ||
+				aBoard[y][x] == Piece.WHITE && bBoard[y][x] == Piece.BLACK) {
+			//System.out.println("CONFLICTTT for move: x: "+m.getLocation().x + " - y: "+m.getLocation().y + " - p: "+m.getPlayer());
+			return false;			
+		}
+		return true;
+	}
+	
+	public boolean equals(Board other) {
+		byte[][] o = other.getBoard();
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				if (board[j][i] != o[j][i]) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
 		
-
-
-
-
-
-
-
 	/*
 	 * Transform comparison should be in buildTree
 	 * Takes two boards, compares most recent move of the first board to check for conflicts
 	 */
 	public Board transform(int i) {
 		switch (i) {
-			case 0: //transform90CW
+			/*case 0: //transform90CW
 				return transform90CW();
 			case 1:
 				return transform90CCW();
 			case 2:
-				return transform180();
-			case 3:
+				return transform180();*/
+			case 0:
 				return transformFlipVertical();
-			case 4:
+			case 1:
 				return transformFlipHorizontal();
-			case 5:
+			case 2:
 				return transformFlipMajorDiagonal();
-			case 6:
+			case 3:
 				return transformFlipMinorDiagonal();
 			default:
 				return null;
@@ -457,33 +426,69 @@ public class Board {
 	}
 
 	private Board transform90CCW() {
-		// TODO Auto-generated method stub
-		return this;
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(j, boardSize-i-1));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
 	}
 
 	private Board transform180() {
-		// TODO Auto-generated method stub
-		return this;
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(boardSize-i-1, boardSize-j-1));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
 	}
 
 	private Board transformFlipVertical() {
-		// TODO Auto-generated method stub
-		return this;
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(boardSize-i-1, j));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
 	}
 
 	private Board transformFlipHorizontal() {
-		// TODO Auto-generated method stub
-		return this;
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(i, boardSize-j-1));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
 	}
 
 	private Board transformFlipMajorDiagonal() {
-		// TODO Auto-generated method stub
-		return this;
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(j,i));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
 	}
 
 	private Board transformFlipMinorDiagonal() {
-		// TODO Auto-generated method stub
-		return this;
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				GameMove m = new GameMove(board[j][i], new Point(boardSize-j-1, boardSize-i-1));
+				tBoard.setCell(m);
+			}
+		}
+		return tBoard;
 	}
 
 
