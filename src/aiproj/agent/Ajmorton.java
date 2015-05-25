@@ -36,9 +36,7 @@ public class Ajmorton implements Player, Piece {
 	
 	private ArrayList<GameMove> moves;
 	
-	public static void main(String[] args) {
-		System.out.println("test");
-		
+	public static void main(String[] args) {		
 		Ajmorton aj = new Ajmorton();
 		aj.init(5, 1);
 		
@@ -54,7 +52,6 @@ public class Ajmorton implements Player, Piece {
 			aj.opponentMove(GameMove.getMove(gm));
 			
 			aj.mainBoard.printBoard();
-			System.out.println("=================");
 		}
 		
 	}
@@ -232,9 +229,8 @@ public class Ajmorton implements Player, Piece {
 						if (currentNode.getData().getDepth() == (maxDepth-1)) {
 							leafNodes++;
 						}
+						
 						tBoard.updateBoard(m);
-						if (DEBUG) System.out.println("d: "+depth+" - j: "+j+" - i: "+i);
-						if (DEBUG) tBoard.printBoard();
 						
 						ArrayList<Node<GameState>> siblings = currentNode.getChildren();
 						Iterator<Node<GameState>> it = siblings.iterator();
@@ -277,7 +273,7 @@ public class Ajmorton implements Player, Piece {
 			}
 		}
 		
-		System.out.println("Leaf nodes: "+leafNodes);
+		//System.out.println("Leaf nodes: "+leafNodes);
 
 		return decisionTree;
 	}
@@ -316,15 +312,10 @@ public class Ajmorton implements Player, Piece {
 	
 
 	public void makeMove(GameMove m) {
-		System.out.println("Move: X:"+m.getLocation().x+" - y: "+m.getLocation().y+" - player: "+m.getPlayer());
+		//System.out.println("Move: X:"+m.getLocation().x+" - y: "+m.getLocation().y+" - player: "+m.getPlayer());
 		mainBoard.updateBoard(m);
 		mainBoard.checkCaptures(m, scoreBoard);
 		moves.add(m);
-	}
-	
-	public void printMoves() {
-		for (GameMove m : moves)
-			System.out.println("Player: "+m.getPlayer() + " - x: "+m.getLocation().x + " - y: "+m.getLocation().y);
 	}
 	
 	public Board getBoard() {

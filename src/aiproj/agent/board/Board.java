@@ -34,6 +34,10 @@ public class Board {
 	public void setCell(GameMove move) {
 		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
 	}
+	
+	public void setCell(int x, int y, byte v) {
+		board[y][x] = v;
+	}
 
 	public void resetCell(GameMove move) {
 		board[move.getLocation().y][move.getLocation().x] = Piece.EMPTY;
@@ -76,6 +80,13 @@ public class Board {
 		}
 		return false;
 	}
+	
+	public boolean onBoard(int x, int y) {
+		if (x >= 0 && y >= 0 && x < boardSize && y < boardSize) {
+			return true;
+		}
+		return false;
+	}
 
 	public boolean isOccupied(Point p) {
 		return (board[p.y][p.x] != Piece.EMPTY);
@@ -114,12 +125,6 @@ public class Board {
 		return true;
 	}
 
-	
-	//TODO Move this somewhere
-	private Point addPoints(Point a, Point b) {
-		return new Point(a.x+b.x, a.y+b.y);
-	}
-
 	public void checkCaptures(GameMove move, ScoreBoard sb) {
 		//System.out.println("Move: x: "+move.getLocation().x+ " - y: "+move.getLocation().y+" - p: "+move.getPlayer());
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
@@ -128,31 +133,36 @@ public class Board {
 
 		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
 		Point offset = new Point(xOffset, yOffset);
-		Point pathStart = addPoints(centerCell, offset);
-		Point endCell = new Point(pathStart);
+		
+		Point endCell = new Point();
+		
+		int pathStartX = move.getLocation().x;
+		int pathStartY = move.getLocation().y;
 
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
 		
-		while (!onBoard(pathStart) || board[pathStart.y][pathStart.x] != move.getPlayer()) {
+		while (!onBoard(pathStartX, pathStartY) || board[pathStartY][pathStartX] != move.getPlayer()) {
 			offset = Miscellaneous.nextCell(offset);
-			pathStart = addPoints(offset, centerCell);
+			pathStartX = offset.x;
+			pathStartY = offset.y;
 			// We have cycled around with with no possible points to start pathing from, therefore no captures.
-			if (pathStart.equals(endCell)) {
+			if (pathStartX == endCell.x && pathStartY == endCell.y) {
 				return;
 			}
 		}
 		
 		// We have found a piece surrounding the move that matches!
-		endCell = new Point(pathStart);
+		endCell.setLocation(pathStartX, pathStartY);
 		offset = Miscellaneous.nextCell(offset);
-		pathStart = addPoints(offset, centerCell);
+		pathStartX = centerCell.x + offset.x;
+		pathStartY = centerCell.y + offset.y;
 
 		boolean newPath = true;
-		while (!pathStart.equals(endCell)) {
-			if (onBoard(pathStart)) {
-				if (board[pathStart.y][pathStart.x] != move.getPlayer()) {
+		while (!(pathStartX == endCell.x && pathStartY == endCell.y)) {
+			if (onBoard(pathStartX, pathStartY)) {
+				if (board[pathStartY][pathStartX] != move.getPlayer()) {
 					if (newPath) {
-						startingPaths.add(new Point(pathStart));
+						startingPaths.add(new Point(pathStartX, pathStartY));
 						newPath = false;
 					} else {
 						newPath = true;
@@ -160,7 +170,8 @@ public class Board {
 				}
 			}
 			offset = Miscellaneous.nextCell(offset);
-			pathStart = addPoints(offset, centerCell);
+			pathStartX = centerCell.x;
+			pathStartY = centerCell.y;
 		}		
 		
 		// Loop through all our starting points and attempt to pathfind to edge from there
@@ -395,12 +406,6 @@ public class Board {
 	 */
 	public Board transform(int i) {
 		switch (i) {
-			/*case 0: //transform90CW
-				return transform90CW();
-			case 1:
-				return transform90CCW();
-			case 2:
-				return transform180();*/
 			case 0:
 				return transformFlipVertical();
 			case 1:
@@ -418,8 +423,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(boardSize-j-1, i));
-				tBoard.setCell(m);
+				tBoard.setCell(boardSize-j-1, i, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -429,8 +433,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(j, boardSize-i-1));
-				tBoard.setCell(m);
+				tBoard.setCell(j, boardSize-i-1, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -440,8 +443,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(boardSize-i-1, boardSize-j-1));
-				tBoard.setCell(m);
+				tBoard.setCell(boardSize-i-1, boardSize-j-1, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -451,8 +453,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(boardSize-i-1, j));
-				tBoard.setCell(m);
+				tBoard.setCell(boardSize-i-1, j, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -462,8 +463,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(i, boardSize-j-1));
-				tBoard.setCell(m);
+				tBoard.setCell(i, boardSize-j-1, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -473,8 +473,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(j,i));
-				tBoard.setCell(m);
+				tBoard.setCell(j, i, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -484,8 +483,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(boardSize-j-1, boardSize-i-1));
-				tBoard.setCell(m);
+				tBoard.setCell(j, i, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -495,8 +493,8 @@ public class Board {
 	/* TEST FUNCTION */
 
 	public void printBoard() {
-		System.out.println("printing scoreboard");
-		System.out.println("board size: "+boardSize);
+		//System.out.println("printing scoreboard");
+		//System.out.println("board size: "+boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
 				System.out.print(board[j][i] + " ");
