@@ -10,7 +10,6 @@ public class ScoreBoard extends Board {
 		super(boardSize);
 		
 		this.maxScore = generateMetadata();
-		printBoard();
 	}
 	
 	private byte generateMetadata() {
