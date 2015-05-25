@@ -1,15 +1,12 @@
 package aiproj.agent.decisionTree;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import aiproj.agent.board.Board;
 
 public class Tree<T> {
 	private Root<T> root;
 	
-	public Tree (T data, Board board) {
-		root = new Root<T>(data, board);
+	public Tree (T data) {
+		root = new Root<T>(data);
 	}
 	
 	public Root<T> getRoot() {
@@ -67,15 +64,10 @@ public class Tree<T> {
 	}
 	
 	public static class Root<T> extends Node<T> {
-		private Board board;
 		
-		public Root(T data, Board board) {
+		public Root(T data) {
 			super(data, null);
-			this.board = board;
 		}
 		
-		public void setBoard(Board board) {
-			this.board = board;
-		}
 	}
 }
