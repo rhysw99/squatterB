@@ -177,7 +177,7 @@ public class Ajmorton implements Player, Piece {
 	}
 	
 	public Tree<GameState> buildTree() {
-		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null), new Board(mainBoard.getBoardSize()));
+		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
 		Root<GameState> root = decisionTree.getRoot();
 
 		int p = currentPlayer;
@@ -229,8 +229,8 @@ public class Ajmorton implements Player, Piece {
 						Board tBoard = Board.copy(mainBoard);
 						if (currentNode.getData().getDepth() == (maxDepth-1)) {
 							leafNodes++;
-							tBoard.updateBoard(m);
 						}
+						tBoard.updateBoard(m);
 						if (DEBUG) System.out.println("d: "+depth+" - j: "+j+" - i: "+i);
 						if (DEBUG) tBoard.printBoard();
 						
@@ -245,18 +245,15 @@ public class Ajmorton implements Player, Piece {
 						while (it.hasNext()) {
 							Node<GameState> sibling = it.next();
 							if (!checkNodesUnique(newNode, sibling, parentBoard, tBoard)) {
-								//System.out.println("Removed node!!");
+								System.out.println("Removed node!!");
 								unique = false;
 								break;
 							}
 						}
 						
-						if (currentNode.getData().getDepth() == (maxDepth-1)) {
-							tBoard.checkCaptures(m, scoreBoard);
-						}
-						
 						if (unique) {
 							if (currentNode.getData().getDepth() == (maxDepth-1)) {
+								tBoard.checkCaptures(m, scoreBoard);
 								newNode.getData().calculateScore(tBoard);
 							}
 							currentNode.insert(newNode);
@@ -287,7 +284,7 @@ public class Ajmorton implements Player, Piece {
 			if (transformFlags[i]) {
 				Board transBoard = tBoard.transform(i);
 				if (!Board.checkUniqueStates(tBoard, transBoard, currentNode.getData().getMove())) {
-					//System.out.println("Set flag to false: "+i);
+					System.out.println("Set flag to false: "+i);
 					transformFlags[i] = false;
 				}
 			}
@@ -303,7 +300,7 @@ public class Ajmorton implements Player, Piece {
 			if (transformFlags[i]) {
 				Board transBoard = nBoard.transform(i);
 				if (sBoard.equals(transBoard)) {
-					//System.out.println("Duplicate state!!!");
+					System.out.println("Duplicate state!!!");
 					return false;
 				}
 			}
