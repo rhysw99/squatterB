@@ -64,7 +64,7 @@ public class Ajmorton implements Player, Piece {
 		/* This function is called by the referee to initialise the player.
 		 *  Return 0 for successful initialization and -1 for failed one.
 		 */	
-		
+				
 		boolean playerCorrect = ((p == BLACK) || (p == WHITE));
 		boolean sizeCorrect   = ((n == 6) || (n == 7)); // Is this only cases?			
 
@@ -79,6 +79,8 @@ public class Ajmorton implements Player, Piece {
 		this.moves = new ArrayList<GameMove>();
 		
 		this.currentPlayer = Piece.WHITE;
+		
+		Miscellaneous.init();
 		
 		return SUCCESS;
 	}
@@ -211,7 +213,7 @@ public class Ajmorton implements Player, Piece {
 			/*System.out.println("parent board");
 			parentBoard.printBoard();*/
 			
-			if (currentNode.getData().getMove() != null) {
+			if (currentNode.getData().getMove() != null && currentNode.getData().getDepth() < (maxDepth-1)) {
 				checkUniqueTransforms(currentNode, parentBoard);
 			}
 			
@@ -241,13 +243,16 @@ public class Ajmorton implements Player, Piece {
 						Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
 						newNode.getData().setDepth(currentNode.getData().getDepth() + 1);
 						
-						boolean unique = true;						
-						while (it.hasNext()) {
-							Node<GameState> sibling = it.next();
-							if (!checkNodesUnique(newNode, sibling, parentBoard, tBoard)) {
-								System.out.println("Removed node!!");
-								unique = false;
-								break;
+						
+						boolean unique = true;
+						if (currentNode.getData().getDepth() < (maxDepth-1)) {
+							while (it.hasNext()) {
+								Node<GameState> sibling = it.next();
+								if (!checkNodesUnique(newNode, sibling, parentBoard, tBoard)) {
+									//System.out.println("Removed node!!");
+									unique = false;
+									break;
+								}
 							}
 						}
 						
@@ -284,7 +289,7 @@ public class Ajmorton implements Player, Piece {
 			if (transformFlags[i]) {
 				Board transBoard = tBoard.transform(i);
 				if (!Board.checkUniqueStates(tBoard, transBoard, currentNode.getData().getMove())) {
-					System.out.println("Set flag to false: "+i);
+					//System.out.println("Set flag to false: "+i);
 					transformFlags[i] = false;
 				}
 			}
@@ -300,7 +305,7 @@ public class Ajmorton implements Player, Piece {
 			if (transformFlags[i]) {
 				Board transBoard = nBoard.transform(i);
 				if (sBoard.equals(transBoard)) {
-					System.out.println("Duplicate state!!!");
+					//System.out.println("Duplicate state!!!");
 					return false;
 				}
 			}

@@ -1,6 +1,7 @@
 package aiproj.agent.board;
 
 import aiproj.agent.Ajmorton;
+import aiproj.agent.Miscellaneous;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
 import aiproj.agent.decisionTree.GameState;
@@ -133,7 +134,7 @@ public class Board {
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
 		
 		while (!onBoard(pathStart) || board[pathStart.y][pathStart.x] != move.getPlayer()) {
-			offset = nextCell(offset);
+			offset = Miscellaneous.nextCell(offset);
 			pathStart = addPoints(offset, centerCell);
 			// We have cycled around with with no possible points to start pathing from, therefore no captures.
 			if (pathStart.equals(endCell)) {
@@ -143,7 +144,7 @@ public class Board {
 		
 		// We have found a piece surrounding the move that matches!
 		endCell = new Point(pathStart);
-		offset = nextCell(offset);
+		offset = Miscellaneous.nextCell(offset);
 		pathStart = addPoints(offset, centerCell);
 
 		boolean newPath = true;
@@ -158,7 +159,7 @@ public class Board {
 					}
 				}
 			}
-			offset = nextCell(offset);
+			offset = Miscellaneous.nextCell(offset);
 			pathStart = addPoints(offset, centerCell);
 		}		
 		
@@ -328,24 +329,6 @@ public class Board {
 		return;
 	}
 
-	private static Point nextCell(Point offset) {
-		// TODO	
-		// STORE HASHMAP PERMANENTLY
-		HashMap<Point, Point> next = new HashMap<Point, Point>(8);
-		next.put(new Point(-1, -1), new Point(0, -1));
-		next.put(new Point(0, -1), new Point(1, -1));
-		next.put(new Point(1, -1), new Point(1, 0));
-		next.put(new Point(1, 0), new Point(1, 1));
-		next.put(new Point(1, 1), new Point(0, 1));
-		next.put(new Point(0, 1), new Point(-1, 1));
-		next.put(new Point(-1, 1), new Point(-1, 0));
-		next.put(new Point(-1, 0), new Point(-1, -1));
-		
-		offset = next.get(offset);
-
-		return offset;
-	}
-
 	private void captureCell(GameMove capMove){
 		// TODO cell values (1==BLACK etc are still not set, suggest following modified Peice interface)
 		
@@ -412,19 +395,19 @@ public class Board {
 	 */
 	public Board transform(int i) {
 		switch (i) {
-			case 0: //transform90CW
+			/*case 0: //transform90CW
 				return transform90CW();
 			case 1:
 				return transform90CCW();
 			case 2:
-				return transform180();
-			case 3:
+				return transform180();*/
+			case 0:
 				return transformFlipVertical();
-			case 4:
+			case 1:
 				return transformFlipHorizontal();
-			case 5:
+			case 2:
 				return transformFlipMajorDiagonal();
-			case 6:
+			case 3:
 				return transformFlipMinorDiagonal();
 			default:
 				return null;
