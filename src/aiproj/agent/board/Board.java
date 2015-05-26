@@ -1,19 +1,13 @@
 package aiproj.agent.board;
 
-import aiproj.agent.Ajmorton;
+import aiproj.agent.Cell;
 import aiproj.agent.Miscellaneous;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
-import aiproj.agent.decisionTree.GameState;
-import aiproj.agent.decisionTree.Tree.Node;
-import aiproj.squatter.Move;
-import aiproj.squatter.Piece;
-
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map.Entry;
 
 public class Board {	
 	protected byte[][] board;			//the game board
@@ -40,7 +34,7 @@ public class Board {
 	}
 
 	public void resetCell(GameMove move) {
-		board[move.getLocation().y][move.getLocation().x] = Piece.EMPTY;
+		board[move.getLocation().y][move.getLocation().x] = Cell.EMPTY;
 	}
 
 	/* GETTER */
@@ -89,7 +83,7 @@ public class Board {
 	}
 
 	public boolean isOccupied(Point p) {
-		return (board[p.y][p.x] != Piece.EMPTY);
+		return (board[p.y][p.x] != Cell.EMPTY);
 	}
 
 	public boolean onEdge(Point p) {
@@ -117,7 +111,7 @@ public class Board {
 	public boolean isFull() {
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				if (board[j][i] == Piece.EMPTY) {
+				if (board[j][i] == Cell.EMPTY) {
 					return false;
 				}
 			}
@@ -355,26 +349,26 @@ public class Board {
 		int x = (int)capMove.getLocation().getX();
 		int player = capMove.getPlayer();
 
-		if(player == Piece.BLACK){
+		if(player == Cell.BLACK){
 			switch (board[y][x]){
-			case Piece.WHITE:
-				board[y][x] = Piece.WHITE_CAP;
+			case Cell.WHITE:
+				board[y][x] = Cell.WHITE_CAP;
 				break;
 
-			case Piece.EMPTY:
-				board[y][x] = Piece.CAP;
+			case Cell.EMPTY:
+				board[y][x] = Cell.CAP;
 				break;
 
 			default:
 				break;
 			}
-		}else if(player == Piece.WHITE){
+		}else if(player == Cell.WHITE){
 			switch(board[y][x]){
-			case Piece.BLACK:
-				board[y][x] = Piece.BLACK_CAP;
+			case Cell.BLACK:
+				board[y][x] = Cell.BLACK_CAP;
 				break;
-			case Piece.EMPTY:
-				board[y][x] = Piece.CAP;
+			case Cell.EMPTY:
+				board[y][x] = Cell.CAP;
 				break;
 			default:
 				break;
@@ -388,8 +382,8 @@ public class Board {
 		byte[][] bBoard = b.getBoard();
 		int x = m.getLocation().x;
 		int y = m.getLocation().y;
-		if (aBoard[y][x] == Piece.BLACK && bBoard[y][x] == Piece.WHITE ||
-				aBoard[y][x] == Piece.WHITE && bBoard[y][x] == Piece.BLACK) {
+		if (aBoard[y][x] == Cell.BLACK && bBoard[y][x] == Cell.WHITE ||
+				aBoard[y][x] == Cell.WHITE && bBoard[y][x] == Cell.BLACK) {
 			//System.out.println("CONFLICTTT for move: x: "+m.getLocation().x + " - y: "+m.getLocation().y + " - p: "+m.getPlayer());
 			return false;			
 		}

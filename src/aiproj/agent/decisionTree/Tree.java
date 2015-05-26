@@ -29,6 +29,7 @@ public class Tree<T> {
 		}
 		
 		public void setScore(int score)	{this.score = score;}
+		public int getScore(){return this.score;}
 		
 		public void setCapDifference(boolean playerCapture){
 			if(playerCapture){
@@ -40,10 +41,6 @@ public class Tree<T> {
 		}
 		
 		public int getCapDifference()	{return capDifference;}
-		
-		public GameMove getMostRecentMove(){
-			return data.move;
-		}
 		
 		public boolean insert(T data) {
 			Node<T> n = new Node<T>(data, this);

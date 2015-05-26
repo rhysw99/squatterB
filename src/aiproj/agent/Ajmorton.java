@@ -7,13 +7,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Stack;
 
-import aiproj.agent.board.Board;
-import aiproj.agent.board.ScoreBoard;
-import aiproj.agent.decisionTree.GameMove;
-import aiproj.agent.decisionTree.GameState;
-import aiproj.agent.decisionTree.Tree;
-import aiproj.agent.decisionTree.Tree.Node;
-import aiproj.agent.decisionTree.Tree.Root;
+import aiproj.agent.board.*;
+import aiproj.agent.decisionTree.*;
+import aiproj.agent.decisionTree.Tree.*;
 import aiproj.squatter.*;
 
 public class Ajmorton implements Player, Piece {
@@ -38,7 +34,49 @@ public class Ajmorton implements Player, Piece {
 	
 	public static void main(String[] args) {		
 		Ajmorton aj = new Ajmorton();
-		aj.init(5, 1);
+		aj.init(7, 1);
+		
+		// build a root and a node and a board size 6
+		GameMove recentMove = new GameMove(Cell.BLACK, new Point(3,3), Cell.BLACK);
+		GameState newGs = new GameState(null, recentMove);
+		Root<GameState> root = new Root<GameState>(newGs); 
+		Node<GameState> node = new Node<GameState>(newGs, root);
+		Board currentBoard = new Board(7);
+		
+		
+		/*
+		 * 0 0 0 0 0 0
+		 * 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0
+		 * 0 0 0 0 0 0
+		 */
+		
+		//set Board
+		currentBoard.setCell(2, 2, (byte)Cell.BLACK);
+		currentBoard.setCell(3, 3, (byte)Cell.BLACK);
+		currentBoard.setCell(1, 1, (byte)Cell.BLACK);
+		currentBoard.setCell(3, 1, (byte)Cell.WHITE);
+
+		/*
+		 * 0 0 0 0 0 0
+		 * 0 2 0 1 0 0 
+		 * 0 0 2 0 0 0 
+		 * 0 0 0 2 0 0 
+		 * 0 0 0 0 0 0
+		 * 0 0 0 0 0 0
+		 */
+		
+		
+		currentBoard.printBoard();
+		
+		// score the node
+		Scoring.scoreState(node, root, currentBoard.getBoard());
+		
+		System.out.println("boardScore is: " + node.getScore() + "\n");
+		
+		
 		
 		/*while (!aj.mainBoard.isFull()) {
 			//System.out.println("New cycle");
@@ -77,7 +115,7 @@ public class Ajmorton implements Player, Piece {
 
 		this.moves = new ArrayList<GameMove>();
 		
-		this.currentPlayer = Piece.WHITE;
+		this.currentPlayer = Cell.WHITE;
 		
 		Miscellaneous.init();
 		
@@ -88,7 +126,7 @@ public class Ajmorton implements Player, Piece {
 	public Move makeMove() {
 		GameMove gm;
 		if (currentMove == 0) {
-			gm = new GameMove(Piece.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2), playerID);
+			gm = new GameMove(Cell.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2), playerID);
 		} else {
 			Tree<GameState> decisionTree = buildTree();
 			
@@ -110,7 +148,7 @@ public class Ajmorton implements Player, Piece {
 		makeMove(gm);
 		
 		currentMove++;
-		currentPlayer = ((currentPlayer == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
 		
 		return GameMove.getMove(gm);
 	}
@@ -144,7 +182,7 @@ public class Ajmorton implements Player, Piece {
 		mainBoard.checkCaptures(gm, scoreBoard);
 		
 		currentMove++;
-		currentPlayer = ((currentPlayer == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
 		
 		
 		return SUCCESS;
@@ -167,7 +205,7 @@ public class Ajmorton implements Player, Piece {
 	//
 	public void printBoard(PrintStream output) {
 	//TODO
-	// change from int output to char, build the Piece.interface alternative
+	// change from int output to char, build the Cell.interface alternative
 		byte[][] b = mainBoard.getBoard();
 		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
@@ -268,7 +306,7 @@ public class Ajmorton implements Player, Piece {
 				}
 			}
 			// END OF TURN
-			p = ((p == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+			p = ((p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
 			
 			// Clean up child nodes
 			if (currentNode.getData().getDepth() > currentMove) {
