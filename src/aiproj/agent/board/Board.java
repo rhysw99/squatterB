@@ -188,6 +188,8 @@ public class Board {
 
 		//start pathfinding
 		int i,j;
+		
+		int playerID = move.getPlayerID();
 
 		// stores variable length lists of possible next cells
 		HashMap<Integer, ArrayList<PointPair>> potentialMoves = new HashMap<Integer, ArrayList<PointPair>>(sb.getMaxScore() + 1);
@@ -331,10 +333,16 @@ public class Board {
 			int x = exploredList.get(0).x;
 			int y = exploredList.get(0).y;
 			//TODO Change piece structure
-			GameMove newCap = new GameMove(move.getPlayer(), new Point(x,y));
+			GameMove newCap = new GameMove(move.getPlayer(), new Point(x,y), playerID);
 
 			captureCell(newCap);
+			
 			exploredList.remove(0);
+
+			//TODO find a way to access node
+			boolean playerCapture = (move.getPlayer() == move.getPlayerID()); // was capture made by player? (not opponent)
+			
+			//Node.setCaptureDifference(playerCapture);
 		}
 
 		return;

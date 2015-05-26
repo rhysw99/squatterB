@@ -40,7 +40,7 @@ public class Ajmorton implements Player, Piece {
 		Ajmorton aj = new Ajmorton();
 		aj.init(5, 1);
 		
-		while (!aj.mainBoard.isFull()) {
+		/*while (!aj.mainBoard.isFull()) {
 			//System.out.println("New cycle");
 			aj.makeMove();
 			GameMove gm = new GameMove(aj.currentPlayer, new Point(0,0));
@@ -52,7 +52,9 @@ public class Ajmorton implements Player, Piece {
 			aj.opponentMove(GameMove.getMove(gm));
 			
 			aj.mainBoard.printBoard();
-		}
+		}*/
+		
+		
 		
 	}
 	
@@ -86,7 +88,7 @@ public class Ajmorton implements Player, Piece {
 	public Move makeMove() {
 		GameMove gm;
 		if (currentMove == 0) {
-			gm = new GameMove(Piece.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2));
+			gm = new GameMove(Piece.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2), playerID);
 		} else {
 			Tree<GameState> decisionTree = buildTree();
 			
@@ -132,7 +134,7 @@ public class Ajmorton implements Player, Piece {
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
-		GameMove gm = GameMove.getGameMove(m);
+		GameMove gm = GameMove.getGameMove(m, playerID);
 		
 		if(!mainBoard.isLegal(gm)) {
 			return FAILURE;
@@ -165,6 +167,7 @@ public class Ajmorton implements Player, Piece {
 	//
 	public void printBoard(PrintStream output) {
 	//TODO
+	// change from int output to char, build the Piece.interface alternative
 		byte[][] b = mainBoard.getBoard();
 		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
@@ -176,7 +179,7 @@ public class Ajmorton implements Player, Piece {
 	}
 	
 	public Tree<GameState> buildTree() {
-		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
+		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null), playerID);
 		Root<GameState> root = decisionTree.getRoot();
 
 		int p = currentPlayer;
@@ -222,7 +225,7 @@ public class Ajmorton implements Player, Piece {
 			for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 				for (int i = 0; i < mainBoard.getBoardSize(); i++) {
 					//TODO Switch to new move class?
-					GameMove m = new GameMove(p, new Point(i, j));
+					GameMove m = new GameMove(p, new Point(i, j), playerID);
 
 					if (parentBoard.isLegal(m)) {
 						Board tBoard = Board.copy(mainBoard);
@@ -299,6 +302,7 @@ public class Ajmorton implements Player, Piece {
 		sBoard.setCell(sibling.getData().getMove());
 		for (int i = 0; i < transformFlags.length; i++) {
 			if (transformFlags[i]) {
+				//TODO don't generate new boards for comparison, just compare
 				Board transBoard = nBoard.transform(i);
 				if (sBoard.equals(transBoard)) {
 					//System.out.println("Duplicate state!!!");

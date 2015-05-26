@@ -11,10 +11,12 @@ public class GameMove {
 	private byte player;
 	/* Using point is better java design, however it has much more overhead than just two bytes */
 	private Point location;
+	private int playerID;
 	
-	public GameMove(int player, Point location) {
+	public GameMove(int player, Point location, int playerID) {
 		this.player = (byte) player;
 		this.location = location;
+		this.playerID = playerID;
 	}
 
 	public byte getPlayer() {
@@ -25,8 +27,12 @@ public class GameMove {
 		return location;
 	}
 	
-	public static GameMove getGameMove(Move m) {
-		return new GameMove((byte) m.P, new Point(m.Col, m.Row));
+	public int getPlayerID(){
+		return playerID;
+	}
+	
+	public static GameMove getGameMove(Move m, int playerID) {
+		return new GameMove((byte) m.P, new Point(m.Col, m.Row), playerID);
 	}
 	
 	public static Move getMove(GameMove gm) {
