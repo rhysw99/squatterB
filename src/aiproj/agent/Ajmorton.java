@@ -1,6 +1,10 @@
 package aiproj.agent;
 
 
+// TODO
+// move Scoring to correct location (find where that is)
+// pathfind still needs to update capDifference, need to pass reference to recentNode in
+
 import java.awt.Point;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -51,7 +55,7 @@ public class Ajmorton implements Player, Piece {
 		 * 0 0 0 0 0 0 
 		 * 0 0 0 0 0 0
 		 * 0 0 0 0 0 0
-		 */
+		 
 		
 		//set Board
 		currentBoard.setCell(2, 2, (byte)Cell.BLACK);
@@ -67,14 +71,11 @@ public class Ajmorton implements Player, Piece {
 		 * 0 0 0 0 0 0
 		 * 0 0 0 0 0 0
 		 */
-		
-		
-		currentBoard.printBoard();
-		
+
 		// score the node
-		Scoring.scoreState(node, root, currentBoard.getBoard());
+		//Scoring.scoreState(node, root, currentBoard.getBoard());
 		
-		System.out.println("boardScore is: " + node.getScore() + "\n");
+		//System.out.println("boardScore is: " + node.getScore() + "\n");
 		
 		
 		
@@ -209,7 +210,7 @@ public class Ajmorton implements Player, Piece {
 		byte[][] b = mainBoard.getBoard();
 		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
-				output.print(b[j][i]+" ");
+				output.print(Cell.toChar(b[j][i]) + " ");
 			}
 			output.println();			
 		}

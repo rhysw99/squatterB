@@ -24,7 +24,7 @@ public class Board {
 		this.boardSize = boardSize;
 	}
 
-	/* SETTER */
+	/* SETTERS */
 	public void setCell(GameMove move) {
 		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
 	}
@@ -54,6 +54,8 @@ public class Board {
 		return board;
 	}
 
+	
+	/* METHODS */
 	public boolean isLegal(GameMove move){
 		if (!onBoard(move.getLocation())) {
 			return false;
@@ -168,7 +170,7 @@ public class Board {
 			pathStartY = centerCell.y;
 		}		
 		
-		// Loop through all our starting points and attempt to pathfind to edge from there
+		// Iterate through all our starting points and attempt to pathfind to edge from there
 		Iterator<Point> it = startingPaths.iterator();
 		while(it.hasNext()) {
 			Point p = it.next();
@@ -335,7 +337,6 @@ public class Board {
 
 			//TODO find a way to access node
 			boolean playerCapture = (move.getPlayer() == move.getPlayerID()); // was capture made by player? (not opponent)
-			
 			//Node.setCaptureDifference(playerCapture);
 		}
 
@@ -419,36 +420,6 @@ public class Board {
 			default:
 				return null;
 		}		
-	}
-
-	private Board transform90CW() {
-		Board tBoard = new Board(boardSize);
-		for (int j = 0; j < boardSize; j++) {
-			for (int i = 0; i < boardSize; i++) {
-				tBoard.setCell(boardSize-j-1, i, board[j][i]);
-			}
-		}
-		return tBoard;
-	}
-
-	private Board transform90CCW() {
-		Board tBoard = new Board(boardSize);
-		for (int j = 0; j < boardSize; j++) {
-			for (int i = 0; i < boardSize; i++) {
-				tBoard.setCell(j, boardSize-i-1, board[j][i]);
-			}
-		}
-		return tBoard;
-	}
-
-	private Board transform180() {
-		Board tBoard = new Board(boardSize);
-		for (int j = 0; j < boardSize; j++) {
-			for (int i = 0; i < boardSize; i++) {
-				tBoard.setCell(boardSize-i-1, boardSize-j-1, board[j][i]);
-			}
-		}
-		return tBoard;
 	}
 
 	private Board transformFlipVertical() {
