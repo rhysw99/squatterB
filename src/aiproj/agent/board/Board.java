@@ -123,24 +123,27 @@ public class Board {
 
 	public void checkCaptures(GameMove move, ScoreBoard sb) {
 		//System.out.println("Move: x: "+move.getLocation().x+ " - y: "+move.getLocation().y+" - p: "+move.getPlayer());
-		/* Find the point adjacent from the move made which is closest to a corner.*/		
+		/* Find the point adjacent from the move made which is closest to a corner.*/
 		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
 		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
 
 		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
 		Point offset = new Point(xOffset, yOffset);
 
-		Point endCell = new Point();
+		int centerCellX = centerCell.x,
+			centerCellY = centerCell.y;
+		
+		int pathStartX = centerCellX + offset.x, 
+			pathStartY = centerCellY + offset.x;
 
-		int pathStartX = move.getLocation().x;
-		int pathStartY = move.getLocation().y;
-
+		Point endCell = new Point(pathStartX, pathStartY);
+		
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
-
+		// find first pathStart
 		while (!onBoard(pathStartX, pathStartY) || board[pathStartY][pathStartX] != move.getPlayer()) {
 			offset = Miscellaneous.nextCell(offset);
-			pathStartX = offset.x;
-			pathStartY = offset.y;
+			pathStartX = centerCellX + offset.x;
+			pathStartY = centerCellY + offset.y;
 			// We have cycled around with with no possible points to start pathing from, therefore no captures.
 			if (pathStartX == endCell.x && pathStartY == endCell.y) {
 				return;
@@ -148,32 +151,46 @@ public class Board {
 		}
 
 		// We have found a piece surrounding the move that matches!
+		System.out.println("firstPC found: " + pathStartX + ", " + pathStartY);
+		
 		endCell.setLocation(pathStartX, pathStartY);
+
 		offset = Miscellaneous.nextCell(offset);
 		pathStartX = centerCell.x + offset.x;
 		pathStartY = centerCell.y + offset.y;
 
+		System.out.println("pathStartCheck = " + pathStartX + ", " + pathStartY);
+		System.out.println("endCell = " + endCell.x + ", " + endCell.y);
+		
+		
 		boolean newPath = true;
 		while (!(pathStartX == endCell.x && pathStartY == endCell.y)) {
+			System.out.println("pathStart = [" + pathStartX + ", " + pathStartY);
 			if (onBoard(pathStartX, pathStartY)) {
+				System.out.println("cell is "+ board[pathStartY][pathStartX]);
 				if (board[pathStartY][pathStartX] != move.getPlayer()) {
 					if (newPath) {
+						System.out.println("newPath added\n");
 						startingPaths.add(new Point(pathStartX, pathStartY));
 						newPath = false;
 					} else {
-						newPath = true;
+						System.out.println("newPath not added\n");
 					}
+				} else {
+					System.out.println("flag true");
+					newPath = true;
 				}
 			}
 			offset = Miscellaneous.nextCell(offset);
-			pathStartX = centerCell.x;
-			pathStartY = centerCell.y;
+			pathStartX = centerCell.x + offset.x;
+			pathStartY = centerCell.y + offset.y;
 		}		
 
 		// Iterate through all our starting points and attempt to pathfind to edge from there
 		Iterator<Point> it = startingPaths.iterator();
 		while(it.hasNext()) {
 			Point p = it.next();
+			System.out.println("startPath = " + p.x + ", " + p.y);
 			pathfind(p, move, sb);
 		}
 	}

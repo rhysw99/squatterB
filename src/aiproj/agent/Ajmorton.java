@@ -39,7 +39,7 @@ public class Ajmorton implements Player, Piece {
 	
 	public static void main(String[] args) {		
 		Ajmorton aj = new Ajmorton();
-		aj.init(6, 1);
+		aj.init(7, 1);
 		
 		aj.mainBoard.setCell(0, 0, (byte)Cell.WHITE);
 		aj.mainBoard.setCell(1, 0, (byte)Cell.WHITE);
@@ -53,17 +53,28 @@ public class Ajmorton implements Player, Piece {
 		aj.mainBoard.setCell(5, 3, (byte)Cell.WHITE);
 		aj.mainBoard.setCell(5, 4, (byte)Cell.WHITE);
 		
+		aj.mainBoard.setCell(0, 2, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 3, (byte)Cell.WHITE);
+		
 		aj.mainBoard.setCell(1, 1, (byte)Cell.WHITE);
 	//	aj.mainBoard.setCell(2, 2, (byte)Cell.WHITE);
 		aj.mainBoard.setCell(3, 3, (byte)Cell.WHITE);
 		aj.mainBoard.setCell(4, 4, (byte)Cell.WHITE);
 		aj.mainBoard.setCell(5, 5, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 4, (byte)Cell.WHITE);
 		
+		aj.mainBoard.setCell(2, 5, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 5, (byte)Cell.WHITE);
 		
 		aj.printBoard(System.out);
 		
 		aj.mainBoard.updateBoard(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE));
+		
+		System.out.println("\n");
+		aj.printBoard(System.out);
+		
 		aj.mainBoard.checkCaptures(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE), aj.scoreBoard);
+		
 		System.out.println("\n");
 		aj.printBoard(System.out);
 		
