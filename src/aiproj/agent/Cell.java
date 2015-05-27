@@ -1,37 +1,26 @@
-/**
- * COMP30024 Artificial Intelligence
- * Project A - Checking Win States
- * ajmorton Andrew Morton 522139 
- * rhysw    Rhys Williams 661561
- */
-// TODO fix for projB
 package aiproj.agent;
-
-import java.awt.Point;
 
 public class Cell {
 	
-	private char owner;					// the owner of the cell ('B', 'W', '+', '-')
-	private Point p;					// the x and y coordinates of the cell (as a Point)
+	public static int number = 6;
+	public static final int EMPTY     =  0,
+							WHITE     =  1, 
+            				BLACK     =  2,
+            				WHITE_CAP =  3,
+            				BLACK_CAP =  4,
+            				CAP       =  5;
 	
-	
-	/* CONSTRUCTER */
-	public Cell(Point p, char owner) {
-		this.p = p;
-		this.owner = owner;
+	public static char toChar(int cellID){
+		
+		switch(cellID){
+		case 0:	 return '-';
+		case 1:  return 'W';
+		case 2:  return 'B';
+		case 3:  return 'w';
+		case 4:  return 'b';
+		case 5:  return '+';
+		default: return ' ';
+		}
 	}
 	
-	/* SETTERS */
-	public void setOwner(char owner) {
-		this.owner = owner;
-	}	
-	
-	/* GETTERS */
-	public char getOwner() {
-		return this.owner;
-	}
-	
-	public Point getPosition() {
-		return p;
-	}
 }

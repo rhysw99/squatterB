@@ -13,11 +13,13 @@ public class GameMove {
 	private byte player;
 	private int x;
 	private int y;
+	private int playerID;
 	
-	public GameMove(int player, int x, int y) {
+	public GameMove(int player, int x, int y, int playerID) {
 		this.player = (byte) player;
 		this.x = x;
 		this.y = y;
+		this.playerID = playerID;
 	}
 
 	public byte getPlayer() {
@@ -32,7 +34,7 @@ public class GameMove {
 		return y;
 	}
 	
-	public static GameMove getGameMove(Board b, int move) {
+	public static GameMove getGameMove(Board b, int move, int playerID) {
 		int size = b.getBoardSize();
 		int player;
 		if (move > size*11) {
@@ -44,12 +46,15 @@ public class GameMove {
 		int y = move / 10;
 		int x = move - y*10;
 		
-		return new GameMove(player, x, y);
+		return new GameMove(player, x, y, playerID);
+	}
+			
+	public int getPlayerID(){
+		return playerID;
 	}
 	
-	
-	public static GameMove getGameMove(Move m) {
-		return new GameMove((byte) m.P, m.Col, m.Row);
+	public static GameMove getGameMove(Move m, int playerID) {
+		return new GameMove((byte) m.P, m.Col, m.Row, playerID);
 	}
 	
 	public static Move getMove(GameMove gm) {

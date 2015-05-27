@@ -21,11 +21,11 @@ public class Miscellaneous {
 		next.put(new Point(-1, 1), new Point(-1, 0));
 		next.put(new Point(-1, 0), new Point(-1, -1));
 		
-		zobrist = new long[boardSize*boardSize][Pieces.number];
+		zobrist = new long[boardSize*boardSize][Cell.number];
 		
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				for (int p = 0; p < Pieces.number; p++) {
+				for (int p = 0; p < Cell.number; p++) {
 					zobrist[j*boardSize + i][p] = Miscellaneous.randomLong();
 				}
 			}
