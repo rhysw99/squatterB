@@ -151,7 +151,6 @@ public class Board {
 		}
 
 		// We have found a piece surrounding the move that matches!
-		System.out.println("firstPC found: " + pathStartX + ", " + pathStartY);
 		
 		endCell.setLocation(pathStartX, pathStartY);
 
@@ -159,25 +158,17 @@ public class Board {
 		pathStartX = centerCell.x + offset.x;
 		pathStartY = centerCell.y + offset.y;
 
-		System.out.println("pathStartCheck = " + pathStartX + ", " + pathStartY);
-		System.out.println("endCell = " + endCell.x + ", " + endCell.y);
-		
 		
 		boolean newPath = true;
 		while (!(pathStartX == endCell.x && pathStartY == endCell.y)) {
-			System.out.println("pathStart = [" + pathStartX + ", " + pathStartY);
 			if (onBoard(pathStartX, pathStartY)) {
-				System.out.println("cell is "+ board[pathStartY][pathStartX]);
 				if (board[pathStartY][pathStartX] != move.getPlayer()) {
 					if (newPath) {
-						System.out.println("newPath added\n");
 						startingPaths.add(new Point(pathStartX, pathStartY));
 						newPath = false;
 					} else {
-						System.out.println("newPath not added\n");
 					}
 				} else {
-					System.out.println("flag true");
 					newPath = true;
 				}
 			}
@@ -190,7 +181,6 @@ public class Board {
 		Iterator<Point> it = startingPaths.iterator();
 		while(it.hasNext()) {
 			Point p = it.next();
-			System.out.println("startPath = " + p.x + ", " + p.y);
 			pathfind(p, move, sb);
 		}
 	}
@@ -237,7 +227,7 @@ public class Board {
 					int newRow = (int)currCell.getY() + i;
 					int newCol = (int)currCell.getX() + j;
 					Point nextCell = new Point(newCol, newRow);
-					if (onBoard(nextCell)) {
+					if (onBoard(nextCell) && (board[nextCell.y][nextCell.x]) != move.getPlayer()) {
 						int cellScore = sb.getValue(nextCell);
 
 						PointPair newPointPair = new PointPair(nextCell, currCell);
@@ -276,7 +266,7 @@ public class Board {
 								listLength -= 1;
 								continue;
 							}
-
+							
 							// if diagonal check for adjacents
 							if((Math.abs(newCell.x - prevCell.x) + Math.abs(newCell.y - prevCell.y)) == 2) { // diagonal movement
 								int ownerCellX, ownerCellY;
@@ -298,7 +288,7 @@ public class Board {
 							exploredList.add(newCell);
 
 							// Are we at one of the edge nodes?
-							if(scoreMap[newCell.y][newCell.x] == sb.getMaxScore()){
+							if(onEdge(new Point(newCell.x, newCell.y))){
 								return;	// no new cells in capture list
 							}
 
@@ -306,14 +296,13 @@ public class Board {
 
 							currCell = newCell;
 							exhausted = false;
-
 							for (int k = -1; k <= 1; k++) {
 								for (int l = -1; l <= 1; l++) {
-									if (k != 0 && l != 0) {	// not current cell
+									if ((k != 0) || (l != 0)) {	// not current cell
 										int newRow = (int)currCell.getY() + k;
 										int newCol = (int)currCell.getX() + l;
 										newCell = new Point(newCol, newRow);
-										if(onBoard(newCell) && (explored[newRow][newCol] == 0)) { // on board, not already in potMoves
+										if(onBoard(newCell) && (explored[newRow][newCol] == 0 && (board[newRow][newCol]!=move.getPlayer()))) { // on board, not already in potMoves
 
 											int cellScore = scoreMap[newRow][newCol];
 
