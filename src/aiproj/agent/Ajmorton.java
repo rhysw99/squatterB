@@ -3,7 +3,11 @@ package aiproj.agent;
 
 // TODO
 // move Scoring to correct location (find where that is)
-// pathfind still needs to update capDifference, need to pass reference to recentNode in
+// pathfind still needs to update capDifference, need to pass reference to recentNode in somewhere
+// timing and space need to be reduced - alteration of child generation may accomplish
+// fill out comments.txt
+// do we use alpha beta?
+// scoreMap for 6x6 is likely wrong
 
 import java.awt.Point;
 import java.io.PrintStream;
@@ -20,15 +24,12 @@ public class Ajmorton implements Player, Piece {
 	
 	public static final int FAILURE = -1;
 	public static final int SUCCESS = 0;
-	
 	public static final int MAX_PLY = 4;
 	
 	public static final boolean DEBUG = false;
 
 	private int playerID;
-	
 	private int currentPlayer;
-	
 	private int currentMove;
 	
 	private Board mainBoard;
@@ -38,15 +39,43 @@ public class Ajmorton implements Player, Piece {
 	
 	public static void main(String[] args) {		
 		Ajmorton aj = new Ajmorton();
-		aj.init(7, 1);
+		aj.init(6, 1);
 		
+		aj.mainBoard.setCell(0, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(2, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(4, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 0, (byte)Cell.WHITE);
+
+		aj.mainBoard.setCell(5, 1, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 2, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 4, (byte)Cell.WHITE);
+		
+		aj.mainBoard.setCell(1, 1, (byte)Cell.WHITE);
+	//	aj.mainBoard.setCell(2, 2, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(4, 4, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 5, (byte)Cell.WHITE);
+		
+		
+		aj.printBoard(System.out);
+		
+		aj.mainBoard.updateBoard(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE));
+		aj.mainBoard.checkCaptures(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE), aj.scoreBoard);
+		System.out.println("\n");
+		aj.printBoard(System.out);
+		
+		
+		/*
 		// build a root and a node and a board size 6
 		GameMove recentMove = new GameMove(Cell.BLACK, new Point(3,3), Cell.BLACK);
 		GameState newGs = new GameState(null, recentMove);
 		Root<GameState> root = new Root<GameState>(newGs); 
 		Node<GameState> node = new Node<GameState>(newGs, root);
 		Board currentBoard = new Board(7);
-		
+		*/
 		
 		/*
 		 * 0 0 0 0 0 0
@@ -104,6 +133,8 @@ public class Ajmorton implements Player, Piece {
 		 */	
 				
 		boolean playerCorrect = ((p == BLACK) || (p == WHITE));
+		//TODO how does this affect scalability?
+		// doesn't throw error, just fails
 		boolean sizeCorrect   = ((n == 6) || (n == 7)); // Is this only cases?			
 
 		if (!playerCorrect || !sizeCorrect) {

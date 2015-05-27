@@ -4,23 +4,6 @@ Unavoidable captures
 	- can states be established where opponent cannot prevent a capture?
 	  i.e. dual loops
 
-
-	Can use recursion to ignore pointers to parents
-		may cause problems with respect to alpha beta
-		alpha beta back in play as ply-depth will not be enough to consider 
-		local minimums
-
-Deep learning algorithms
-	guest lecture slide 24
-
-
-Top level
-	- track number of player moves
-	- multithreading? - keep track of time, update best move once per level explored
-	  and then pass out final value just before timeout
-	
-
-
 Minimising the decision tree
 	- alpha-beta pruning
 	

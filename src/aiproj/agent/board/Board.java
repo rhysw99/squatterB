@@ -28,7 +28,7 @@ public class Board {
 	public void setCell(GameMove move) {
 		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
 	}
-	
+
 	public void setCell(int x, int y, byte v) {
 		board[y][x] = v;
 	}
@@ -54,7 +54,7 @@ public class Board {
 		return board;
 	}
 
-	
+
 	/* METHODS */
 	public boolean isLegal(GameMove move){
 		if (!onBoard(move.getLocation())) {
@@ -76,7 +76,7 @@ public class Board {
 		}
 		return false;
 	}
-	
+
 	public boolean onBoard(int x, int y) {
 		if (x >= 0 && y >= 0 && x < boardSize && y < boardSize) {
 			return true;
@@ -94,18 +94,18 @@ public class Board {
 		}
 		return false;
 	}
-	
+
 	public static Board copy(Board b) {
 		int size = b.getBoardSize();
 		byte[][] board = b.getBoard();
 		byte[][] newBoard = new byte[size][size];
-		
+
 		for (int j = 0; j < size; j++) {
 			for (int i = 0; i < size; i++) {
 				newBoard[j][i] = board[j][i];
 			}
 		}
-		
+
 		return new Board(newBoard, size);
 	}
 
@@ -129,14 +129,14 @@ public class Board {
 
 		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
 		Point offset = new Point(xOffset, yOffset);
-		
+
 		Point endCell = new Point();
-		
+
 		int pathStartX = move.getLocation().x;
 		int pathStartY = move.getLocation().y;
 
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
-		
+
 		while (!onBoard(pathStartX, pathStartY) || board[pathStartY][pathStartX] != move.getPlayer()) {
 			offset = Miscellaneous.nextCell(offset);
 			pathStartX = offset.x;
@@ -146,7 +146,7 @@ public class Board {
 				return;
 			}
 		}
-		
+
 		// We have found a piece surrounding the move that matches!
 		endCell.setLocation(pathStartX, pathStartY);
 		offset = Miscellaneous.nextCell(offset);
@@ -169,7 +169,7 @@ public class Board {
 			pathStartX = centerCell.x;
 			pathStartY = centerCell.y;
 		}		
-		
+
 		// Iterate through all our starting points and attempt to pathfind to edge from there
 		Iterator<Point> it = startingPaths.iterator();
 		while(it.hasNext()) {
@@ -184,7 +184,7 @@ public class Board {
 
 		//start pathfinding
 		int i,j;
-		
+
 		int playerID = move.getPlayerID();
 
 		// stores variable length lists of possible next cells
@@ -206,14 +206,14 @@ public class Board {
 		if (onEdge(startPath)) {
 			return;
 		}
-		
+
 		//add cell to explored list, all necessary checks are done
 		exploredList.add(startPath);
 		explored[startPath.y][startPath.x] = 1;
 
 
 		Point currCell = startPath;
-		
+
 		for(i = -1; i <= 1; i++) {
 			for(j = -1; j <= 1; j++) {
 				if((i != 0) || (j != 0)) {	// not current cell
@@ -234,35 +234,30 @@ public class Board {
 
 		// end initial cell check
 
-		boolean exhausted = false,
-				onlyDiag  = true;	// if only unreachable Diags are left than search is done
+		boolean exhausted = false;
 
 		while(!exhausted){
 			exhausted = true;
-			onlyDiag = true;
 			outerloop:
 				for(i = sb.getMaxScore(); i >= 0; i--){							// start looking at highest scoring possibles
 					if(!potentialMoves.get(i).isEmpty()) {							// is possible point of score i available?
-							
 						exhausted = false;
-						
-						for(j = 0; j <potentialMoves.get(i).size(); j++){
-							Point newP = potentialMoves.get(i).get(j).getNewCell();
-						}
-						
-						for(j = 0; j <potentialMoves.get(i).size(); j++){
-							
+
+						int listLength = potentialMoves.get(i).size();
+						for(j = 0; j < listLength; j++){
+
 							// there are moves with score i to try
 							PointPair nextTry = potentialMoves.get(i).get(j);
 
 							Point newCell  = nextTry.getNewCell();
 							Point prevCell = nextTry.getPrevCell();
-							
+
 							//check that cell can be moved to
 							if(board[newCell.y][newCell.x] == move.getPlayer()) {
-								onlyDiag = false;
 								potentialMoves.get(i).remove(j);
-								break outerloop; //restart search through list
+								j -= 1;
+								listLength -= 1;
+								continue;
 							}
 
 							// if diagonal check for adjacents
@@ -276,15 +271,15 @@ public class Board {
 								if((ownerCellX == move.getPlayer()) && (ownerCellY == move.getPlayer())) {
 									explored[newCell.y][newCell.x] = 0;
 									potentialMoves.get(i).remove(j);
-									onlyDiag = false;
-									break outerloop;
+									j -= 1;
+									listLength -= 1;
+									continue;
 								}
 							}
-							onlyDiag = false;
-							
+
 							// else can use cell to check
 							exploredList.add(newCell);
-							
+
 							// Are we at one of the edge nodes?
 							if(scoreMap[newCell.y][newCell.x] == sb.getMaxScore()){
 								return;	// no new cells in capture list
@@ -293,6 +288,7 @@ public class Board {
 							//else add surrounding cells to potentialMoves
 
 							currCell = newCell;
+							exhausted = false;
 
 							for (int k = -1; k <= 1; k++) {
 								for (int l = -1; l <= 1; l++) {
@@ -318,12 +314,9 @@ public class Board {
 						}
 					}
 				}
-			if(onlyDiag) {
-				exhausted = true;
-			}
 		}
 
-		
+
 		// cells can be added to the captures
 		while(!exploredList.isEmpty()) {
 			int x = exploredList.get(0).x;
@@ -332,7 +325,7 @@ public class Board {
 			GameMove newCap = new GameMove(move.getPlayer(), new Point(x,y), playerID);
 
 			captureCell(newCap);
-			
+
 			exploredList.remove(0);
 
 			//TODO find a way to access node
@@ -345,7 +338,7 @@ public class Board {
 
 	private void captureCell(GameMove capMove){
 		// TODO cell values (1==BLACK etc are still not set, suggest following modified Peice interface)
-		
+
 		int y = (int)capMove.getLocation().getY();
 		int x = (int)capMove.getLocation().getX();
 		int player = capMove.getPlayer();
@@ -377,7 +370,7 @@ public class Board {
 		}
 		return;				
 	}
-	
+
 	public static boolean checkUniqueStates(Board a, Board b, GameMove m) {
 		byte[][] aBoard = a.getBoard();
 		byte[][] bBoard = b.getBoard();
@@ -390,7 +383,7 @@ public class Board {
 		}
 		return true;
 	}
-	
+
 	public boolean equals(Board other) {
 		byte[][] o = other.getBoard();
 		for (int j = 0; j < boardSize; j++) {
@@ -402,23 +395,23 @@ public class Board {
 		}
 		return true;
 	}
-		
+
 	/*
 	 * Transform comparison should be in buildTree
 	 * Takes two boards, compares most recent move of the first board to check for conflicts
 	 */
 	public Board transform(int i) {
 		switch (i) {
-			case 0:
-				return transformFlipVertical();
-			case 1:
-				return transformFlipHorizontal();
-			case 2:
-				return transformFlipMajorDiagonal();
-			case 3:
-				return transformFlipMinorDiagonal();
-			default:
-				return null;
+		case 0:
+			return transformFlipVertical();
+		case 1:
+			return transformFlipHorizontal();
+		case 2:
+			return transformFlipMajorDiagonal();
+		case 3:
+			return transformFlipMinorDiagonal();
+		default:
+			return null;
 		}		
 	}
 

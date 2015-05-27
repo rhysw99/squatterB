@@ -11,7 +11,7 @@ import aiproj.squatter.Piece;
 
 public class Scoring {
 
-	// holdover location, will move to tree.java most likely
+	// hold-over location, will move to tree.java most likely
 	
 	
 	/* Plan
@@ -24,8 +24,8 @@ public class Scoring {
 
 		//TODO Node needs player capture difference (scoreDifference)
 		//		Update will need to modify them
-		// modifying to work on 7x7 and *6x6*
 		// only consider top corner for aggression?
+		// move to bottom right? will probably see less attention from similar algorithms
 
 
 		// score weightings for different conditions, must be so that more 
