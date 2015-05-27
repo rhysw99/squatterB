@@ -1,12 +1,9 @@
 package aiproj.agent.board;
 
-import aiproj.agent.Ajmorton;
 import aiproj.agent.Miscellaneous;
+import aiproj.agent.Pieces;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
-import aiproj.agent.decisionTree.GameState;
-import aiproj.agent.decisionTree.Tree.Node;
-import aiproj.squatter.Move;
 import aiproj.squatter.Piece;
 
 import java.awt.Point;
@@ -15,7 +12,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map.Entry;
 
 public class Board {	
 	protected byte[][] board;			//the game board
@@ -34,7 +30,7 @@ public class Board {
 
 	/* SETTER */
 	public void setCell(GameMove move) {
-		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
+		board[move.getY()][move.getX()] = move.getPlayer();
 	}
 	
 	public void setCell(int x, int y, byte v) {
@@ -42,7 +38,7 @@ public class Board {
 	}
 
 	public void resetCell(GameMove move) {
-		board[move.getLocation().y][move.getLocation().x] = Piece.EMPTY;
+		board[move.getY()][move.getX()] = Pieces.EMPTY;
 	}
 
 	/* GETTER */
@@ -63,9 +59,9 @@ public class Board {
 	}
 
 	public boolean isLegal(GameMove move){
-		if (!onBoard(move.getLocation())) {
+		if (!onBoard(move.getX(), move.getY())) {
 			return false;
-		} else if (isOccupied(move.getLocation())) {
+		} else if (isOccupied(move.getX(), move.getY())) {
 			return false;
 		}
 
@@ -91,7 +87,11 @@ public class Board {
 	}
 
 	public boolean isOccupied(Point p) {
-		return (board[p.y][p.x] != Piece.EMPTY);
+		return (board[p.y][p.x] != Pieces.EMPTY);
+	}
+	
+	public boolean isOccupied(int x, int y) {
+		return (board[y][x] != Pieces.EMPTY);
 	}
 
 	public boolean onEdge(Point p) {
@@ -117,12 +117,28 @@ public class Board {
 	public boolean isFull() {
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				if (board[j][i] == Piece.EMPTY) {
+				if (board[j][i] == Pieces.EMPTY) {
 					return false;
 				}
 			}
 		}
 		return true;
+	}
+	
+	public long hashKey() {
+		long key = 0;
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				if (board[j][i] != Pieces.EMPTY) {
+					key ^= Miscellaneous.zobrist[j*boardSize + i][board[j][i]];
+				}
+			}
+		}
+		return key;
+	}
+	
+	public long updateKey(long oldKey, int i, int j, int p) {
+		return oldKey ^ Miscellaneous.zobrist[j*boardSize + i][p];
 	}
 
 	public int hashCodeString(int depth) {
@@ -144,30 +160,30 @@ public class Board {
 	}
 	
 	public boolean checkCaptures(GameMove move, ScoreBoard sb) {
-		//System.out.println("Move: x: "+move.getLocation().x+ " - y: "+move.getLocation().y+" - p: "+move.getPlayer());
+		//System.out.println("Move: x: "+move.getX()+ " - y: "+move.getY()+" - p: "+move.getPlayer());
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
-		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
-		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
+		int yOffset  = (move.getY() <= boardSize/2) ? -1:1;
+		int xOffset = (move.getX() <= boardSize/2) ? -1:1;
 		
 		boolean boardModified = false;
 
-		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
-		Point offset = new Point(xOffset, yOffset);
+		Point centerCell = new Point(move.getX(), move.getY());
+		Point offset = new Point(xOffset, yOffset);		
 		
-		Point endCell = new Point();
+		int pathStartX = move.getX() + offset.x;
+		int pathStartY = move.getY() + offset.y;
 		
-		int pathStartX = move.getLocation().x;
-		int pathStartY = move.getLocation().y;
-
+		Point endCell = new Point(pathStartX, pathStartY);
+		
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
 		
 		while (!onBoard(pathStartX, pathStartY) || board[pathStartY][pathStartX] != move.getPlayer()) {
 			offset = Miscellaneous.nextCell(offset);
-			pathStartX = offset.x;
-			pathStartY = offset.y;
+			pathStartX = centerCell.x + offset.x;
+			pathStartY = centerCell.y + offset.y;
 			// We have cycled around with with no possible points to start pathing from, therefore no captures.
 			if (pathStartX == endCell.x && pathStartY == endCell.y) {
-				return false;
+				return boardModified;
 			}
 		}
 		
@@ -190,9 +206,9 @@ public class Board {
 				}
 			}
 			offset = Miscellaneous.nextCell(offset);
-			pathStartX = centerCell.x;
-			pathStartY = centerCell.y;
-		}		
+			pathStartX = centerCell.x + offset.x;
+			pathStartY = centerCell.y + offset.y;
+		}
 		
 		// Loop through all our starting points and attempt to pathfind to edge from there
 		Iterator<Point> it = startingPaths.iterator();
@@ -355,7 +371,7 @@ public class Board {
 			int x = exploredList.get(0).x;
 			int y = exploredList.get(0).y;
 			//TODO Change piece structure
-			GameMove newCap = new GameMove(move.getPlayer(), new Point(x,y));
+			GameMove newCap = new GameMove(move.getPlayer(), x, y);
 
 			captureCell(newCap);
 			captures = true;
@@ -369,48 +385,36 @@ public class Board {
 	private void captureCell(GameMove capMove){
 		// TODO cell values (1==BLACK etc are still not set, suggest following modified Peice interface)
 		
-		int y = (int)capMove.getLocation().getY();
-		int x = (int)capMove.getLocation().getX();
+		int y = (int)capMove.getY();
+		int x = (int)capMove.getX();
 		int player = capMove.getPlayer();
 
-		if (player == Piece.BLACK){
+		if (player == Pieces.BLACK){
 			switch (board[y][x]) {
-				case Piece.WHITE:
-					board[y][x] = Piece.WHITE_CAP;
+				case Pieces.WHITE:
+					board[y][x] = Pieces.WHITE_CAP;
 					break;
 	
-				case Piece.EMPTY:
-					board[y][x] = Piece.CAP;
+				case Pieces.EMPTY:
+					board[y][x] = Pieces.CAP;
 					break;
 	
 				default:
 					break;
 			}
-		} else if (player == Piece.WHITE){
+		} else if (player == Pieces.WHITE){
 			switch (board[y][x]) {
-				case Piece.BLACK:
-					board[y][x] = Piece.BLACK_CAP;
+				case Pieces.BLACK:
+					board[y][x] = Pieces.BLACK_CAP;
 					break;
-				case Piece.EMPTY:
-					board[y][x] = Piece.CAP;
+				case Pieces.EMPTY:
+					board[y][x] = Pieces.CAP;
 					break;
 				default:
 					break;
 			}
 		}
 		return;				
-	}
-	
-	public static boolean checkUniqueStates(Board a, Board b, GameMove m) {
-		byte[][] aBoard = a.getBoard();
-		byte[][] bBoard = b.getBoard();
-		int x = m.getLocation().x;
-		int y = m.getLocation().y;
-		if (aBoard[y][x] == Piece.BLACK && bBoard[y][x] == Piece.WHITE ||
-				aBoard[y][x] == Piece.WHITE && bBoard[y][x] == Piece.BLACK) {
-			return false;			
-		}
-		return true;
 	}
 	
 	public boolean equals(Object o) {
@@ -455,8 +459,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(boardSize-j-1, i));
-				tBoard.setCell(m);
+				tBoard.setCell(boardSize-j-1, i, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -466,8 +469,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(j, boardSize-i-1));
-				tBoard.setCell(m);
+				tBoard.setCell(j, boardSize-i-1, board[j][i]);
 			}
 		}
 		return tBoard;
@@ -477,8 +479,7 @@ public class Board {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				GameMove m = new GameMove(board[j][i], new Point(boardSize-i-1, boardSize-j-1));
-				tBoard.setCell(m);
+				tBoard.setCell(boardSize-i-1, boardSize-j-1, board[j][i]);
 			}
 		}
 		return tBoard;

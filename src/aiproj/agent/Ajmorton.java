@@ -1,10 +1,7 @@
 package aiproj.agent;
 
-
-import java.awt.Point;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -23,7 +20,7 @@ public class Ajmorton implements Player, Piece {
 	public static final int FAILURE = -1;
 	public static final int SUCCESS = 0;
 	
-	public static final int MAX_PLY = 32;
+	public static final int MAX_PLY = 4;
 	
 	public static final boolean DEBUG = false;
 
@@ -45,7 +42,7 @@ public class Ajmorton implements Player, Piece {
 		 *  Return 0 for successful initialization and -1 for failed one.
 		 */	
 				
-		boolean playerCorrect = ((p == BLACK) || (p == WHITE));
+		boolean playerCorrect = ((p == Pieces.BLACK) || (p == Pieces.WHITE));
 		boolean sizeCorrect   = ((n == 6) || (n == 7)); // Is this only cases?			
 
 		if (!playerCorrect || !sizeCorrect) {
@@ -53,15 +50,15 @@ public class Ajmorton implements Player, Piece {
 		}
 		
 		this.playerID = p;
-		this.opponentID = (p == Piece.WHITE) ? Piece.BLACK : Piece.WHITE;
+		this.opponentID = (p == Pieces.WHITE) ? Pieces.BLACK : Pieces.WHITE;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
 
 		this.moves = new ArrayList<GameMove>();
 		
-		this.currentPlayer = Piece.WHITE;
+		this.currentPlayer = Pieces.WHITE;
 		
-		Miscellaneous.init();
+		Miscellaneous.init(mainBoard.getBoardSize());
 		
 		return SUCCESS;
 	}
@@ -91,7 +88,7 @@ public class Ajmorton implements Player, Piece {
 		makeMove(gm);
 
 		currentMove++;
-		currentPlayer = ((currentPlayer == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+		currentPlayer = ((currentPlayer == Pieces.WHITE) ? Pieces.BLACK : Pieces.WHITE);
 
 		return GameMove.getMove(gm);
 	}
@@ -139,7 +136,7 @@ public class Ajmorton implements Player, Piece {
 		mainBoard.checkCaptures(gm, scoreBoard);
 		
 		currentMove++;
-		currentPlayer = ((currentPlayer == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+		currentPlayer = ((currentPlayer == Pieces.WHITE) ? Pieces.BLACK : Pieces.WHITE);
 		
 		
 		return SUCCESS;
@@ -176,13 +173,15 @@ public class Ajmorton implements Player, Piece {
 		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
 		Root<GameState> root = decisionTree.getRoot();
 		
+		
 		//System.out.println("CLIENT: "+playerID);
 		//System.out.println("Current: "+currentPlayer);
 
 		int p = currentPlayer;
 		int depth = currentMove;
 		
-		TreeSet<Integer> previousNodes = new TreeSet<Integer>();
+		TreeSet<Long> previousNodes = new TreeSet<Long>();
+		TreeSet<Long> previousUselessNodes = new TreeSet<Long>();
 
 		int leafNodes = 0;
 
@@ -200,11 +199,6 @@ public class Ajmorton implements Player, Piece {
 		//System.out.println("Max depth: "+maxDepth);
 		int[] leaves = new int[maxDepth];
 		
-		int[] bestScore = new int[maxDepth];
-		for (int i = 0; i < bestScore.length; i++) {
-			bestScore[i] = Integer.MIN_VALUE;
-		}
-		
 		Board parentBoard = Board.copy(mainBoard);
 		
 		while (!nodes.isEmpty()) {
@@ -215,37 +209,66 @@ public class Ajmorton implements Player, Piece {
 				continue;
 			}
 			
+			///System.out.println("@@@@@@@@@@@@@@@@@@");
+			
+			//parentBoard.printBoard();
+			
 			/* Set board with all parent moves */
 			Node<GameState> parentNode = currentNode.getParent();
 			while (parentNode != null) {
 				if (parentNode.getData() != null) {
 					if (parentNode.getData().getMove() != null) {
+						//System.out.println("Added Depth: "+parentNode.getData().getDepth());
+						//System.out.println("i: "+parentNode.getData().getMove().getX() + " - j: "+parentNode.getData().getMove().getY() + " - p: "+parentNode.getData().getMove().getPlayer());
 						parentBoard.setCell(parentNode.getData().getMove());
+					} else {
+						//System.out.println("Depth: "+parentNode.getData().getDepth());
+						//System.out.println("Stopped");
 					}
 				}
 				parentNode = parentNode.getParent();
 			}
 			
+			//parentBoard.printBoard();
 			
-			Board tBoard = null;
+			long parentCode = parentBoard.hashKey();
+			
+			Board tBoard = Board.copy(parentBoard);
+			
+			//System.out.println("=======================");
 			
 			for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 				for (int i = 0; i < mainBoard.getBoardSize(); i++) {
-					GameMove m = new GameMove(p, new Point(i, j));
-
-					if (parentBoard.isLegal(m)) {
-						if (tBoard == null) {
-							tBoard = Board.copy(mainBoard);
-						}
+					GameMove m = new GameMove(p, i, j);
+					if (tBoard == null) {
+						tBoard = Board.copy(parentBoard);
+					}
+					if (tBoard.isLegal(m)) {
+						long childCode = parentCode;
+						
+						//System.out.println("--------");
+						//tBoard.printBoard();
 						
 						tBoard.setCell(m);
+				
 						
 						totalNodes++;
 						
-						int code = tBoard.hashCodeString(currentNode.getData().getDepth());
+						childCode = tBoard.hashKey(); // Append move to code
+						
+						//System.out.println(childCode+ " - Depth: "+currentNode.getData().getDepth()+ " - i: "+i+" - j: "+j+ " - p:"+p);
+						
+						//tBoard.printBoard();
 											
-						if (previousNodes.contains(code)) {
-							//System.out.println("Duplicate node");
+						if (previousNodes.contains(childCode)) {
+							//System.out.println("duplicateA");
+							//tBoard.printBoard();
+							continue;
+						} else if (previousUselessNodes.contains(childCode)) {
+							//System.out.println("duplicateB");
+							//tBoard.printBoard();
+							previousUselessNodes.remove(childCode);
+							previousNodes.add(childCode);
 							continue;
 						}
 						
@@ -253,39 +276,40 @@ public class Ajmorton implements Player, Piece {
 						
 						leaves[currentNode.getData().getDepth()]++;
 						
+						generateHashCodes(previousUselessNodes, tBoard, currentNode.getData().getDepth());
+						
 						if (currentNode.getData().getDepth() == (maxDepth-1)) {
 							leafNodes++;
-							generateHashCodes(previousNodes, tBoard, currentNode.getData().getDepth());
 						}
 												
 						GameState newGS = new GameState(root.getData(), m);
 						Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
 						newNode.getData().setDepth(currentNode.getData().getDepth() + 1);
 						
-					
-						boolean boardChanged = tBoard.checkCaptures(m, scoreBoard);
-						newNode.getData().calculateScore(tBoard);
-						//System.out.println("Score: "+newNode.getData().getScore()+ " - Depth: "+newNode.getData().getDepth());
-						if (newNode.getData().getScore() > bestScore[currentNode.getData().getDepth()]) {
-							bestScore[currentNode.getData().getDepth()] = newNode.getData().getScore();
-							currentNode.insert(newNode);
-							nodes.add(newNode);
+						if (currentNode.getData().getDepth() == (maxDepth-1)) {
+							boolean boardChanged = tBoard.checkCaptures(m, scoreBoard);
+							newNode.getData().calculateScore(tBoard);
+							//System.out.println("Score: "+newNode.getData().getScore()+ " - Depth: "+newNode.getData().getDepth());
+							if (boardChanged) {
+								tBoard = null; // If we captured any cells we need to reset the board to the parent state
+							}
 						}
+						currentNode.insert(newNode);
+						nodes.add(newNode);
+
 						
-						if (boardChanged) {
-							tBoard = null; // If we captured any cells we need to reset the board to the parent state
-						}
-													
 						// If the board exists then we didn't make any captures on the last node and therefore can simply reset
 						// the cell
 						if (tBoard != null) {
 							tBoard.resetCell(m);
 						}
+					} else {
+						//System.out.println("DECLINEDDDDDD");
 					}
 				}
 			}
 			// END OF TURN
-			p = ((p == Piece.WHITE) ? Piece.BLACK : Piece.WHITE);
+			p = ((p == Pieces.WHITE) ? Pieces.BLACK : Pieces.WHITE);
 			
 			// Clean up child nodes
 			if (currentNode.getData().getDepth() > currentMove) {
@@ -304,12 +328,35 @@ public class Ajmorton implements Player, Piece {
 			}
 		}
 		
+/*
+		Collection<Integer> sf = previousNodes.values();
+		ArrayList<Integer> sort = new ArrayList<Integer>();		
+		for (Integer i : sf) {
+			sort.add(i);
+		}
+		Collections.sort(sort);
+		Collections.reverse(sort);
+		int zero = 0;
+		int nonzero = 0;
+		
+		for (Integer i : sort) {
+			if (i > 0) {
+				nonzero++;
+				System.out.println(i);
+			} else {
+				zero++;
+			}
+		}
+		
+		System.out.println("Zero: "+zero);
+		System.out.println("Non zero: "+nonzero);
+		
 		for (int i = 0; i < leaves.length; i++) {
 			if (leaves[i] > 0) {
 				//System.out.println("Depth: "+i+ " - Leaves: "+leaves[i]);
 			}
 		}
-		
+		*/
 		System.out.println("Total nodes: "+totalNodes);
 		System.out.println("Reduced nodes: "+reducedNodes);
 		System.out.println("Leaf nodes: "+leafNodes);
@@ -317,14 +364,28 @@ public class Ajmorton implements Player, Piece {
 		return decisionTree;
 	}
 	
-	private void generateHashCodes(TreeSet<Integer> l, Board b, int depth) {
-		int code = b.hashCodeString(depth);
+	private void generateHashCodes(TreeSet<Long> l, Board b, int depth) {
+		long code = b.hashKey();
 		if (!l.contains(code)) {
 			l.add(code);
 		}
 		
-		//System.out.println("List size:" +l.size());
-	}	
+		/*for (int i = 0; i < 7; i++) {
+			Board tBoard = b.transform(i);
+			code = tBoard.hashKey();
+			if (!l.contains(code)) {
+				l.add(code);
+			}
+		}*/
+		
+		if (l.size() > 100000) {
+			trimNodeMap(l);
+		}
+	}
+	
+	private void trimNodeMap(TreeSet<Long> l) {
+		l.clear();
+	}
 
 	public void makeMove(GameMove m) {
 		//System.out.println("Move: X:"+m.getLocation().x+" - y: "+m.getLocation().y+" - player: "+m.getPlayer());
