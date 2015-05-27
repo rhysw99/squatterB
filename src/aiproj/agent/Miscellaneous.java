@@ -27,7 +27,6 @@ public class Miscellaneous {
 			for (int i = 0; i < boardSize; i++) {
 				for (int p = 0; p < Pieces.number; p++) {
 					zobrist[j*boardSize + i][p] = Miscellaneous.randomLong();
-					System.out.println(zobrist[j*boardSize + i][p]);
 				}
 			}
 		}

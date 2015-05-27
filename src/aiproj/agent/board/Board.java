@@ -17,6 +17,8 @@ public class Board {
 	protected byte[][] board;			//the game board
 
 	protected int boardSize;
+	
+	private int freeSpaces;
 
 	/* CONSTRUCTOR */
 	public Board(int boardSize){
@@ -26,6 +28,7 @@ public class Board {
 	public Board(byte[][] board, int boardSize) {
 		this.board = board;
 		this.boardSize = boardSize;
+		this.freeSpaces = boardSize*boardSize;
 	}
 
 	/* SETTER */
@@ -39,6 +42,10 @@ public class Board {
 
 	public void resetCell(GameMove move) {
 		board[move.getY()][move.getX()] = Pieces.EMPTY;
+	}
+	
+	public void resetCell(int i, int j, int p) {
+		board[j][i] = Piece.EMPTY;
 	}
 
 	/* GETTER */
@@ -57,11 +64,27 @@ public class Board {
 	public byte[][] getBoard() {
 		return board;
 	}
+	
+	public int getFreeSpaces() {
+		int count = 0;
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				if (board[j][i] == Pieces.EMPTY) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
 
 	public boolean isLegal(GameMove move){
-		if (!onBoard(move.getX(), move.getY())) {
+		return isLegal(move.getX(), move.getY(), move.getPlayer());
+	}
+	
+	public boolean isLegal(int x, int y, int p) {
+		if (!onBoard(x, y)) {
 			return false;
-		} else if (isOccupied(move.getX(), move.getY())) {
+		} else if (isOccupied(x, y)) {
 			return false;
 		}
 
@@ -141,24 +164,6 @@ public class Board {
 		return oldKey ^ Miscellaneous.zobrist[j*boardSize + i][p];
 	}
 
-	public int hashCodeString(int depth) {
-		StringBuilder sb = new StringBuilder();
-		for (int j = 0; j < boardSize; j++) {
-			for (int i = 0; i < boardSize; i++) {
-				sb.append(board[j][i]*depth);
-			}
-		}
-		MessageDigest messageDigest = null;
-		try {
-			messageDigest = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		messageDigest.update(sb.toString().getBytes());
-		return new String(messageDigest.digest()).hashCode();
-	}
-	
 	public boolean checkCaptures(GameMove move, ScoreBoard sb) {
 		//System.out.println("Move: x: "+move.getX()+ " - y: "+move.getY()+" - p: "+move.getPlayer());
 		/* Find the point adjacent from the move made which is closest to a corner.*/		
@@ -177,7 +182,7 @@ public class Board {
 		
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
 		
-		while (!onBoard(pathStartX, pathStartY) || board[pathStartY][pathStartX] != move.getPlayer()) {
+		while (onBoard(pathStartX, pathStartY) && board[pathStartY][pathStartX] != move.getPlayer()) {
 			offset = Miscellaneous.nextCell(offset);
 			pathStartX = centerCell.x + offset.x;
 			pathStartY = centerCell.y + offset.y;
@@ -388,6 +393,8 @@ public class Board {
 		int y = (int)capMove.getY();
 		int x = (int)capMove.getX();
 		int player = capMove.getPlayer();
+		
+		freeSpaces--;
 
 		if (player == Pieces.BLACK){
 			switch (board[y][x]) {
