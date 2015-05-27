@@ -10,9 +10,11 @@ public class GameState {
 	
 	private boolean[] transformFlags;
 	
-	private int score = Integer.MAX_VALUE;
+	private int score = Integer.MIN_VALUE;
 	
 	private int depth = 0;
+	
+	public int id = 0;
 	
 	private static final byte FLIP_VERTICAL = 0;
 	private static final byte FLIP_HORIZONTAL = 1;
@@ -21,6 +23,7 @@ public class GameState {
 	
 	public GameState(GameState parent, GameMove currentMove) {
 		this.move = currentMove;
+		this.id = (int) Math.round(Math.random() * 1000000);
 		
 		if (parent != null) {
 			transformFlags = parent.transformFlags;
