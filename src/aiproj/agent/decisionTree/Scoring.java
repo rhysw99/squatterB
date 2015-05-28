@@ -81,7 +81,7 @@ public class Scoring {
 				if(match){score += shortDiagWeight; System.out.println("shortMatch");}
 			}// end for transform (0; ++; < checks)
 			
-			if(score <shortDiagWeight){currentNode.setScore(score);	return;}	//if no short diags found end scoring
+			if(score <shortDiagWeight){currentNode.getData().setScore(score);	return;}	//if no short diags found end scoring
 			
 			
 			// check for long diags 4 possible combos
@@ -131,13 +131,13 @@ public class Scoring {
 						
 						
 						// no more scoring to do
-						currentNode.setScore(score);	
+						currentNode.getData().setScore(score);	
 						return;
 						
 		}// end if onDiag
 
 		// no scorable pieces we care about
-		currentNode.setScore(score);	//score is 0
+		currentNode.getData().setScore(score);	//score is 0
 		return;
 	}
 	

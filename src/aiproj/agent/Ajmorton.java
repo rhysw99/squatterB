@@ -178,6 +178,7 @@ public class Ajmorton implements Player, Piece {
 			pBoard.checkCaptures(node.getData(), scoreBoard, currentPlayer);
 			Scoring.scoreState(node, pBoard, currentPlayer);
 			pBoard = null;
+			System.out.println("SCore: "+node.getData().getScore());
 			return node.getData().getScore();
 		}
 			

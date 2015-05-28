@@ -17,31 +17,11 @@ public class Tree<T> {
 		private T data = null;
 		private Node<T> parent = null;
 		private ArrayList<Node<T>> children;
-		private int score; // the heuristic score value
-		private int capDifference; // number of captures of (player-opponent)
 		
 		public Node(T data, Node<T> parent) {
 			this.data = data;
 			this.parent = parent;
 			this.children = new ArrayList<Node<T>>();
-			this.score = 0;
-			this.capDifference = 0;
-		}
-		
-		public void setScore(int score)	{this.score = score;}
-		public int getScore(){return this.score;}
-		
-		public void setCapDifference(boolean playerCapture){
-			if(playerCapture){
-				capDifference += 1;
-			}else{
-				capDifference -=1;
-			}
-			return;
-		}
-		
-		public int getCapDifference() {
-			return capDifference;
 		}
 		
 		public boolean insert(T data) {
