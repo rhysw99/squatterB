@@ -10,6 +10,7 @@ package aiproj.agent;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import aiproj.agent.board.*;
 import aiproj.agent.decisionTree.*;
@@ -80,13 +81,14 @@ public class Ajmorton implements Player, Piece {
 			Node<GameState> n = it.next();
 			if (best == null ||
 					n.getData().getScore() > best.getData().getScore()) {
+				System.out.println("Node score: "+n.getData().getScore());
 				best = n;
 			}
 		}
 		
 		gm = best.getData().getMove();
 
-		makeMove(gm);
+		makeMove(best.getData());
 
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
@@ -102,15 +104,17 @@ public class Ajmorton implements Player, Piece {
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
-		GameMove gm = GameMove.getGameMove(m, playerID);
+		GameMove gm = GameMove.getGameMove(m);
 		
 		if(!mainBoard.isLegal(gm)) {
 			mainBoard.setCell(gm.getX(), gm.getY(), (byte) -1);
 			return FAILURE;
 		}
+		
+		GameState gs = new GameState(null, gm);
 
 		mainBoard.setCell(gm);
-		mainBoard.checkCaptures(gm, scoreBoard);
+		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
 		
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
@@ -141,6 +145,9 @@ public class Ajmorton implements Player, Piece {
 			}
 		}
 		
+		// TODO CHANGE THIS!
+		// TODO use gamestate knowledge of captures to compute winner
+		
 		if (pieces[Cell.BLACK_CAP] > pieces[Cell.WHITE_CAP]) {
 			return Piece.WHITE;
 		} else if (pieces[Cell.WHITE_CAP] > pieces[Cell.BLACK_CAP]) {
@@ -165,10 +172,12 @@ public class Ajmorton implements Player, Piece {
 	}
 	
 	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
-			int maxDepth, Board pBoard, int a, int b) {		
+			int maxDepth, Board pBoard, int a, int b) {
 		if (maxDepth <= 0 ||
 				node.getData().getDepth() == mainBoard.getFreeSpaces()) {
-			node.getData().calculateScore(null);
+			pBoard.checkCaptures(node.getData(), scoreBoard, currentPlayer);
+			Scoring.scoreState(node, pBoard, currentPlayer);
+			pBoard = null;
 			return node.getData().getScore();
 		}
 			
@@ -180,7 +189,9 @@ public class Ajmorton implements Player, Piece {
 			p = playerID;
 		}
 		
-		boolean maximizingPlayer = (p==Cell.WHITE);
+		boolean maximizingPlayer = (p == Cell.WHITE);
+		
+		TreeSet<Long> previousNodes = new TreeSet<Long>();
 		
 		/* Set board with all parent moves */
 		Node<GameState> parentNode = node;
@@ -205,15 +216,17 @@ public class Ajmorton implements Player, Piece {
 					tBoard = Board.copy(pBoard);
 				}
 				tBoard.setCell(i, j, (byte) p);
-
-				GameMove gm = new GameMove(p, i, j, 0);
+			
+				GameMove gm = new GameMove(p, i, j);
 				GameState gs = new GameState(node.getData(), gm);
 				Node<GameState> newNode = new Node<GameState>(gs, node);
 				newNode.getData().setDepth(node.getData().getDepth()+1);
-
+				boolean captures = tBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+			
+				/* alpha beta pruning */
 				if (maximizingPlayer) {
 					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
-							pBoard, a, b);
+							tBoard, a, b);
 					v = (newV > v) ? newV : v;
 					a = (a > v) ? a:v;
 					if (b <= a) {
@@ -221,13 +234,19 @@ public class Ajmorton implements Player, Piece {
 					}
 				} else {
 					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
-							pBoard, a, b);
+							tBoard, a, b);
 					v = (newV < v) ? newV : v;
 					b = (b < v) ? b:v;
 					if (b <= a) {
 						break;
 					}
 				}
+				
+				if (captures) {
+					tBoard = null;
+				}
+				
+				//generateZobristKeys(previousNodes, tBoard);
 				
 				if (newNode.getData().getDepth() == 1) {
 					tree.getRoot().getChildren().add(newNode);
@@ -263,10 +282,20 @@ public class Ajmorton implements Player, Piece {
 		return decisionTree;
 	}
 	
-	public void makeMove(GameMove m) {
-		mainBoard.setCell(m);
-		mainBoard.checkCaptures(m, scoreBoard);
-		moves.add(m);
+	public void generateZobristKeys(TreeSet<Long> l, Board b) {
+		for (int i = 0 ; i < 7; i++) {
+			Board t = b.transform(i);
+			long key = t.hashKey();
+			if (!l.contains(key)) {
+				l.add(key);
+			}
+		}
+	}
+	
+	public void makeMove(GameState gs) {
+		mainBoard.setCell(gs.getMove());
+		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+		//moves.add(m);
 	}
 	
 	public Board getBoard() {

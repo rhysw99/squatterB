@@ -5,6 +5,7 @@ import aiproj.agent.Cell;
 import aiproj.agent.Miscellaneous;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
+import aiproj.agent.decisionTree.GameState;
 import aiproj.squatter.Piece;
 
 import java.awt.Point;
@@ -161,10 +162,12 @@ public class Board {
 		return oldKey ^ Miscellaneous.zobrist[j*boardSize + i][p];
 	}
 
-	public boolean checkCaptures(GameMove move, ScoreBoard sb) {
+	public boolean checkCaptures(GameState gs, ScoreBoard sb, int currentPlayer) {
 		/* Find the point adjacent from the move made which is closest
 		 * to a corner.
 		 */
+		GameMove move = gs.getMove();
+		
 		int yOffset  = (move.getY() <= boardSize/2) ? -1:1;
 		int xOffset = (move.getX() <= boardSize/2) ? -1:1;
 		
@@ -223,7 +226,7 @@ public class Board {
 		Iterator<Point> it = startingPaths.iterator();
 		while(it.hasNext()) {
 			Point p = it.next();
-			 if (pathfind(p, move, sb)) {
+			 if (pathfind(p, gs, sb, currentPlayer)) {
 				 //Captures made
 				 boardModified = true;
 			 }
@@ -231,7 +234,7 @@ public class Board {
 		return boardModified;
 	}
 
-	private boolean pathfind(Point startPath, GameMove move, ScoreBoard sb) {
+	private boolean pathfind(Point startPath, GameState gs, ScoreBoard sb, int currentPlayer) {
 		byte[][] explored = new byte[boardSize][boardSize];
 		byte[][] scoreMap = sb.getBoard();
 
@@ -239,9 +242,9 @@ public class Board {
 
 		//start pathfinding
 		int i,j;
-
-		int playerID = move.getPlayerID();
-
+		
+		GameMove move = gs.getMove();
+		
 		// stores variable length lists of possible next cells
 		HashMap<Integer, ArrayList<PointPair>> potentialMoves = 
 				new HashMap<Integer, ArrayList<PointPair>>(sb.getMaxScore() + 1);
@@ -393,7 +396,7 @@ public class Board {
 			int x = exploredList.get(0).x;
 			int y = exploredList.get(0).y;
 
-			GameMove newCap = new GameMove(move.getPlayer(), x, y, playerID);
+			GameMove newCap = new GameMove(move.getPlayer(), x, y);
 
 			captureCell(newCap);
 			captures = true;
@@ -401,7 +404,8 @@ public class Board {
 			exploredList.remove(0);
 
 			// was capture made by player? (not opponent)
-			boolean playerCapture = (move.getPlayer() == move.getPlayerID());
+			gs.incrementCapture(move.getPlayer());
+			boolean playerCapture = (move.getPlayer() == currentPlayer);
 			//Node.setCaptureDifference(playerCapture);
 		}
 
