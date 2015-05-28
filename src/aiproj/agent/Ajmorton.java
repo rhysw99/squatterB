@@ -39,45 +39,84 @@ public class Ajmorton implements Player, Piece {
 	
 	public static void main(String[] args) {		
 		Ajmorton aj = new Ajmorton();
-		aj.init(7, 1);
-		
+		aj.init(6, 1);
+		aj.scoreBoard.printBoard();
+		/*
 		aj.mainBoard.setCell(0, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(1, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 0, (byte)Cell.BLACK);
 		aj.mainBoard.setCell(2, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(3, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 0, (byte)Cell.BLACK);
 		aj.mainBoard.setCell(4, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 0, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 0, (byte)Cell.BLACK);
 
-		aj.mainBoard.setCell(5, 1, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 2, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 3, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 4, (byte)Cell.WHITE);
-		
+		aj.mainBoard.setCell(0, 1, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 1, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(2, 1, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 1, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(4, 1, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 1, (byte)Cell.BLACK);
+
 		aj.mainBoard.setCell(0, 2, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(1, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 2, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(2, 2, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 2, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(4, 2, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 2, (byte)Cell.BLACK);
+
+		aj.mainBoard.setCell(0, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 3, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(2, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 3, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(4, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 3, (byte)Cell.BLACK);
 		
-		aj.mainBoard.setCell(1, 1, (byte)Cell.WHITE);
-	//	aj.mainBoard.setCell(2, 2, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(3, 3, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(0, 4, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 4, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(2, 4, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 4, (byte)Cell.BLACK);
 		aj.mainBoard.setCell(4, 4, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 5, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(1, 4, (byte)Cell.WHITE);
-		
+		aj.mainBoard.setCell(5, 4, (byte)Cell.BLACK);
+
+		aj.mainBoard.setCell(0, 5, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 5, (byte)Cell.BLACK);
 		aj.mainBoard.setCell(2, 5, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(3, 5, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 5, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(4, 5, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 5, (byte)Cell.BLACK);
+
+		aj.mainBoard.setCell(0, 6, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(1, 6, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(2, 6, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(3, 6, (byte)Cell.BLACK);
+		aj.mainBoard.setCell(4, 6, (byte)Cell.WHITE);
+		aj.mainBoard.setCell(5, 6, (byte)Cell.BLACK);
+
+		*/
+ 
 		
-		aj.printBoard(System.out);
+
+		/*
+		 * 	1 2 1 2 1 2 
+			1 2 1 2 1 2 
+			1 2 1 2 1 2 
+			1 2 1 2 5 2 
+			1 2 1 2 5 2 
+			1 2 1 2 2 1 */
+		 
 		
-		aj.mainBoard.updateBoard(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE));
+		
+		/*
+		Point placed = new Point(2,3);
+		
+		aj.mainBoard.updateBoard(new GameMove(Cell.BLACK, placed, Cell.WHITE));
+		
+		
+		aj.mainBoard.checkCaptures(new GameMove(Cell.BLACK, placed, Cell.WHITE), aj.scoreBoard);
 		
 		System.out.println("\n");
 		aj.printBoard(System.out);
 		
-		aj.mainBoard.checkCaptures(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE), aj.scoreBoard);
-		
-		System.out.println("\n");
-		aj.printBoard(System.out);
-		
+		*/
 		
 		/*
 		// build a root and a node and a board size 6
