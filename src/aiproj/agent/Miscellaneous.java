@@ -30,7 +30,6 @@ public class Miscellaneous {
 				}
 			}
 		}
-		
 	}
 	
 	public static Point nextCell(Point offset) {

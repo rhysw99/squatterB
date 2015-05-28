@@ -8,8 +8,7 @@ import aiproj.squatter.Piece;
 
 /* ADT to store move history */
 public class GameMove {
-
-	/* Maybe use a byte instead and use hashTable or something to get the char from the byte and vice versa as in project A. */
+	
 	private byte player;
 	private int x;
 	private int y;

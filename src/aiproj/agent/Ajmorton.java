@@ -2,8 +2,7 @@ package aiproj.agent;
 
 // TODO
 // move Scoring to correct location (find where that is)
-// pathfind still needs to update capDifference, need to pass reference to recentNode in somewhere
-// timing and space need to be reduced - alteration of child generation may accomplish
+// pathfind still needs to update capDifference, need to pass reference to
 // fill out comments.txt
 // do we use alpha beta?
 // scoreMap for 6x6 is likely wrong
@@ -43,11 +42,13 @@ public class Ajmorton implements Player, Piece {
 		 */
 		
 		if (p != Cell.BLACK && p!= Cell.WHITE) {
-			System.err.println("Invalid player piece id ("+p+").  Program terminating!");
+			System.err.println("Invalid player piece id ("+p+"). "
+					+ "Program terminating!");
 			return FAILURE;
 		}
 		if (n < 4 || n > 9) {
-			System.err.println("Invalid board size ("+n+").  Program terminating!");
+			System.err.println("Invalid board size ("+n+").  "
+					+ "Program terminating!");
 			return FAILURE;
 		}
 
@@ -71,12 +72,14 @@ public class Ajmorton implements Player, Piece {
 
 		Tree<GameState> decisionTree = buildTree();
 
-		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().iterator();
+		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().
+				iterator();
 		Node<GameState> best = null;
 
 		while (it.hasNext()) {
 			Node<GameState> n = it.next();
-			if (best == null || n.getData().getScore() > best.getData().getScore()) {
+			if (best == null ||
+					n.getData().getScore() > best.getData().getScore()) {
 				best = n;
 			}
 		}
@@ -86,14 +89,16 @@ public class Ajmorton implements Player, Piece {
 		makeMove(gm);
 
 		currentMove++;
-		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
+		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
+														 Cell.WHITE);
 		return GameMove.getMove(gm);
 	}
 	
 	//done 
 	public int opponentMove(Move m) {
 		
-		/* Function called by referee to inform the player about the opponent's move
+		/* Function called by referee to inform the player about the
+		 * opponent's move.
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
@@ -108,8 +113,8 @@ public class Ajmorton implements Player, Piece {
 		mainBoard.checkCaptures(gm, scoreBoard);
 		
 		currentMove++;
-		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
-	
+		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
+														 Cell.WHITE);
 		return SUCCESS;
 	}
 	
@@ -117,7 +122,8 @@ public class Ajmorton implements Player, Piece {
 	public int getWinner() {
 	//TODO
 		/* This function when called by referee should return the winner
-		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD respectively
+		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD
+		 *	respectively.
 		 */
 		
 		if (!mainBoard.isFull()) {
@@ -158,8 +164,10 @@ public class Ajmorton implements Player, Piece {
 		
 	}
 	
-	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node, int maxDepth, Board pBoard, int a, int b) {		
-		if (maxDepth <= 0 || node.getData().getDepth() == mainBoard.getFreeSpaces()) {
+	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
+			int maxDepth, Board pBoard, int a, int b) {		
+		if (maxDepth <= 0 ||
+				node.getData().getDepth() == mainBoard.getFreeSpaces()) {
 			node.getData().calculateScore(null);
 			return node.getData().getScore();
 		}
@@ -204,14 +212,16 @@ public class Ajmorton implements Player, Piece {
 				newNode.getData().setDepth(node.getData().getDepth()+1);
 
 				if (maximizingPlayer) {
-					int newV = DLSBuildAB(tree, newNode, maxDepth-1, pBoard, a, b);
+					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
+							pBoard, a, b);
 					v = (newV > v) ? newV : v;
 					a = (a > v) ? a:v;
 					if (b <= a) {
 						break;
 					}
 				} else {
-					int newV = DLSBuildAB(tree, newNode, maxDepth-1, pBoard, a, b);
+					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
+							pBoard, a, b);
 					v = (newV < v) ? newV : v;
 					b = (b < v) ? b:v;
 					if (b <= a) {
@@ -246,8 +256,10 @@ public class Ajmorton implements Player, Piece {
 	}
 	
 	public Tree<GameState> buildTree() {
-		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
-		DLSBuildAB(decisionTree, decisionTree.getRoot(), MAX_PLY, Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
+		GameState gs = new GameState(null, null);
+		Tree<GameState> decisionTree = new Tree<GameState>(gs);
+		DLSBuildAB(decisionTree, decisionTree.getRoot(), MAX_PLY,
+				Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
 		return decisionTree;
 	}
 	

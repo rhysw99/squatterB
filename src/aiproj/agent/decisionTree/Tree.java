@@ -17,8 +17,8 @@ public class Tree<T> {
 		private T data = null;
 		private Node<T> parent = null;
 		private ArrayList<Node<T>> children;
-		private int score;						// the heuristic score value
-		private int capDifference;				// number of captures of (player - opponent) 
+		private int score; // the heuristic score value
+		private int capDifference; // number of captures of (player-opponent)
 		
 		public Node(T data, Node<T> parent) {
 			this.data = data;
@@ -40,7 +40,9 @@ public class Tree<T> {
 			return;
 		}
 		
-		public int getCapDifference()	{return capDifference;}
+		public int getCapDifference() {
+			return capDifference;
+		}
 		
 		public boolean insert(T data) {
 			Node<T> n = new Node<T>(data, this);
@@ -73,10 +75,6 @@ public class Tree<T> {
 		
 		public void setParent(Node<T> p) {
 			this.parent = p;
-		}
-		
-		public void setChildren(ArrayList<Node<T>> children) {
-			this.children = children;
 		}
 		
 	}
