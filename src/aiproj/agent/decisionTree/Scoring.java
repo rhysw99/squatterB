@@ -18,8 +18,6 @@ public class Scoring {
 	 * Scoring only has to take place on moves by the player, moves by the opponent are accounted for in this test
 	 */
 	
-	
-	
 	public static void scoreState(Node<GameState> currentNode, Root<GameState> rootNode, byte[][] currentBoard){
 
 		//TODO Node needs player capture difference (scoreDifference)
@@ -37,7 +35,6 @@ public class Scoring {
 			centerCellWeight  = 2,
 			centerCrossWeight = 1;
 
-
 		int score = 0;
 		int playerID = currentNode.getData().getMove().getPlayerID();	//only care when player makes move, not opponent
 
@@ -51,16 +48,16 @@ public class Scoring {
 		// these are the important cells for our game plan
 				
 		
-		int mostRecentMoveX = currentNode.getData().getMove().getLocation().x;
-		int mostRecentMoveY = currentNode.getData().getMove().getLocation().y;
+		int mostRecentMoveX = currentNode.getData().getMove().getX();
+		int mostRecentMoveY = currentNode.getData().getMove().getY();
 		
 		int     positionSum = mostRecentMoveX + mostRecentMoveY;
 		
 		boolean onDiag = (positionSum%2 == 0);
 
 		GameMove recentMove = currentNode.getData().getMove();
-		int x 			= recentMove.getLocation().x,	// x location of recent move
-			y 			= recentMove.getLocation().y,	// y location of recent move
+		int x 			= recentMove.getX(),	// x location of recent move
+			y 			= recentMove.getY(),	// y location of recent move
 			transform	= 0,							// iterator through transforms types
 			checks		= 0;							// number of transformations to compare to shortDiag etc.
 
@@ -80,12 +77,12 @@ public class Scoring {
 
 			// check for short diags, 8 possible combos
 			// -1 as value is irrelevant for here
-			GameMove a = new GameMove(E, new Point(2,0), -1),	// the important cells from short diag
-					 b = new GameMove(P, new Point(1,1), -1),	//		0 0 E 0 0
-					 c = new GameMove(E, new Point(3,1), -1),	//		0 P 0 E 0
-					 d = new GameMove(P, new Point(2,2), -1);	//		0 0 P 0 0
-																//		0 0 0 0 0
-																//		0 0 0 0 0
+			GameMove a = new GameMove(E, 2, 0, -1),	// the important cells from short diag
+					 b = new GameMove(P, 1, 1, -1),	//		0 0 E 0 0
+					 c = new GameMove(E, 3, 1, -1),	//		0 P 0 E 0
+					 d = new GameMove(P, 2, 2, -1);	//		0 0 P 0 0
+													//		0 0 0 0 0
+													//		0 0 0 0 0
 
 			checks = 8;		//check all rotations/mirrors
 			for(transform = 0; transform <checks; transform++){
@@ -101,19 +98,16 @@ public class Scoring {
 			if(score <shortDiagWeight){currentNode.setScore(score);	return;}	//if no short diags found end scoring
 			
 			
-			
-			
-			
 			// check for long diags 4 possible combos
-						GameMove e = new GameMove(E, new Point(4,2), -1),	// the important cells from long diag (builds off short diag)
-								 f = new GameMove(P, new Point(3,3), -1);	//		0 0 E 0 0
-								 											//		0 P 0 E 0
-								 											//		0 0 P 0 E
-								 											//		0 0 0 P 0
-								 											//		0 0 0 0 0
+						GameMove e = new GameMove(E, 4, 2, -1),	// the important cells from long diag (builds off short diag)
+								 f = new GameMove(P, 3, 3, -1);	//		0 0 E 0 0
+								 								//		0 P 0 E 0
+								 								//		0 0 P 0 E
+								 								//		0 0 0 P 0
+								 								//		0 0 0 0 0
 														 
 						checks = 4;		//check all rotations only
-						for(transform = 0; transform <checks; transform++){
+						for(transform = 0; transform <checks; transform++) {
 							match = true;
 							if(!compareMatch5x5(a, currentBoard, transform, playerID)) {match = false;}
 							if(!compareMatch5x5(b, currentBoard, transform, playerID)) {match = false;}
@@ -129,7 +123,7 @@ public class Scoring {
 	
 						
 						// check for lambdas 4 possible combos
-								c = new GameMove(P, new Point(3,1), -1);	// the important cells for lambda (alters long diag)
+								c = new GameMove(P, 3, 1, -1);	// the important cells for lambda (alters long diag)
 																		//		0 0 E 0 0
 								 										//		0 P 0 P 0
 								 										//		0 0 P 0 E
@@ -168,69 +162,69 @@ public class Scoring {
 	public static boolean compareMatch5x5(GameMove move, byte[][] board, int transformType, int playerID){
 
 		int n 		  = 5,									// boardSize always 5 as only called for top left 5x5
-			x		  = (int) move.getLocation().getX(),
-			y		  = (int) move.getLocation().getY(),		
+			x		  = (int) move.getX(),
+			y		  = (int) move.getY(),		
 			owner	  = (int) move.getPlayer();
 
 		boolean matchPlayer, matchEmpty;
 		
 		if(owner == playerID){	//must be player piece in comparison
 			switch(transformType){
-			case 0:	return (board[	   y	 ][	    x     ] == owner);			//no rotation
-			case 1: return (board[	   x	 ][(n - 1) - y] == owner);			//rot90
-			case 2: return (board[(n - 1) - y][(n - 1) - x] == owner);			//rot180
-			case 3:	return (board[(n - 1) - x][     y	  ] == owner);			//rot270
-			case 4: return (board[	   y	 ][(n - 1) - x] == owner);			//flip |
-			case 5: return (board[(n - 1) - x][(n - 1) - y] == owner);			//flip /
-			case 6: return (board[(n - 1) - y][	    x	  ] == owner);			//flip -
-			case 7: return (board[	   x	 ][	    y	  ] == owner);			//flip \
-			default:
-				return false;
+				case 0:	return (board[	   y	 ][	    x     ] == owner);			//no rotation
+				case 1: return (board[	   x	 ][(n - 1) - y] == owner);			//rot90
+				case 2: return (board[(n - 1) - y][(n - 1) - x] == owner);			//rot180
+				case 3:	return (board[(n - 1) - x][     y	  ] == owner);			//rot270
+				case 4: return (board[	   y	 ][(n - 1) - x] == owner);			//flip |
+				case 5: return (board[(n - 1) - x][(n - 1) - y] == owner);			//flip /
+				case 6: return (board[(n - 1) - y][	    x	  ] == owner);			//flip -
+				case 7: return (board[	   x	 ][	    y	  ] == owner);			//flip \
+				default:
+					return false;
 			}	
-		}else if(owner == Cell.EMPTY){
-			switch(transformType){
-			case 0:																//no rotation
-				matchPlayer = board[	   y	 ][	    x     ] == owner;
-				matchEmpty  = board[	   y	 ][	    x     ] == playerID;
-				return matchPlayer || matchEmpty;	
-				
-			case 1:																//rot90
-				matchPlayer = board[	   x	 ][(n - 1) - y] == owner;
-				matchEmpty  = board[	   x	 ][(n - 1) - y] == playerID;
-				return matchPlayer || matchEmpty;		
-		
-			case 2: 															//rot180
-				matchPlayer = board[(n - 1) - y][(n - 1) - x] == owner;
-				matchEmpty  = board[(n - 1) - y][(n - 1) - x] == playerID;
-				return matchPlayer || matchEmpty;
-				
-			case 3:																//rot270
-				matchPlayer = board[(n - 1) - x][     y	  ] == owner;
-				matchEmpty  = board[(n - 1) - x][     y	  ] == playerID;
-				return matchPlayer || matchEmpty;
+		}else if(owner == Cell.EMPTY) {
+			switch(transformType) {
+				case 0:																//no rotation
+					matchPlayer = board[	   y	 ][	    x     ] == owner;
+					matchEmpty  = board[	   y	 ][	    x     ] == playerID;
+					return matchPlayer || matchEmpty;	
+					
+				case 1:																//rot90
+					matchPlayer = board[	   x	 ][(n - 1) - y] == owner;
+					matchEmpty  = board[	   x	 ][(n - 1) - y] == playerID;
+					return matchPlayer || matchEmpty;		
 			
-			case 4: 															//flip |
-				matchPlayer = board[	   y	 ][(n - 1) - x] == owner;
-				matchEmpty  = board[	   y	 ][(n - 1) - x] == playerID;
-				return matchPlayer || matchEmpty;
+				case 2: 															//rot180
+					matchPlayer = board[(n - 1) - y][(n - 1) - x] == owner;
+					matchEmpty  = board[(n - 1) - y][(n - 1) - x] == playerID;
+					return matchPlayer || matchEmpty;
+					
+				case 3:																//rot270
+					matchPlayer = board[(n - 1) - x][     y	  ] == owner;
+					matchEmpty  = board[(n - 1) - x][     y	  ] == playerID;
+					return matchPlayer || matchEmpty;
 				
-			case 5: 															//flip /
-				matchPlayer = board[(n - 1) - x][(n - 1) - y] == owner;
-				matchEmpty  = board[(n - 1) - x][(n - 1) - y] == playerID;
-				return matchPlayer || matchEmpty;
+				case 4: 															//flip |
+					matchPlayer = board[	   y	 ][(n - 1) - x] == owner;
+					matchEmpty  = board[	   y	 ][(n - 1) - x] == playerID;
+					return matchPlayer || matchEmpty;
+					
+				case 5: 															//flip /
+					matchPlayer = board[(n - 1) - x][(n - 1) - y] == owner;
+					matchEmpty  = board[(n - 1) - x][(n - 1) - y] == playerID;
+					return matchPlayer || matchEmpty;
+					
+				case 6: 															//flip -
+					matchPlayer = board[(n - 1) - y][	    x	  ] == owner;
+					matchEmpty  = board[(n - 1) - y][	    x	  ] == playerID;
+					return matchPlayer || matchEmpty;
+					
+				case 7:																//flip \
+					matchPlayer = board[	   x	 ][	    y	  ] == owner;
+					matchEmpty  = board[	   x	 ][	    y	  ] == playerID;
+					return matchPlayer || matchEmpty;
 				
-			case 6: 															//flip -
-				matchPlayer = board[(n - 1) - y][	    x	  ] == owner;
-				matchEmpty  = board[(n - 1) - y][	    x	  ] == playerID;
-				return matchPlayer || matchEmpty;
-				
-			case 7:																//flip \
-				matchPlayer = board[	   x	 ][	    y	  ] == owner;
-				matchEmpty  = board[	   x	 ][	    y	  ] == playerID;
-				return matchPlayer || matchEmpty;
-			
-			default:
-				return false;
+				default:
+					return false;
 			}
 		}
 		return false;

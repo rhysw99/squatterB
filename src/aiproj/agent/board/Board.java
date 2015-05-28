@@ -8,8 +8,6 @@ import aiproj.agent.decisionTree.GameMove;
 import aiproj.squatter.Piece;
 
 import java.awt.Point;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -135,8 +133,7 @@ public class Board {
 		
 		return new Board(newBoard, size);
 	}
-
-	// TODO CHANGE THIS FUNCTION
+	
 	public boolean isFull() {
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
@@ -560,8 +557,6 @@ public class Board {
 	/* TEST FUNCTION */
 
 	public void printBoard() {
-		//System.out.println("printing scoreboard");
-		//System.out.println("board size: "+boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
 				System.out.print(board[j][i] + " ");

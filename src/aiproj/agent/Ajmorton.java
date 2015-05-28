@@ -8,12 +8,9 @@ package aiproj.agent;
 // do we use alpha beta?
 // scoreMap for 6x6 is likely wrong
 
-import java.awt.Point;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Stack;
-import java.util.TreeSet;
 
 import aiproj.agent.board.*;
 import aiproj.agent.decisionTree.*;
@@ -39,121 +36,21 @@ public class Ajmorton implements Player, Piece {
 	
 	private ArrayList<GameMove> moves;
 	
-	public static void main(String[] args) {		
-		Ajmorton aj = new Ajmorton();
-		aj.init(7, 1);
-		
-		aj.mainBoard.setCell(0, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(1, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(2, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(3, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(4, 0, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 0, (byte)Cell.WHITE);
-
-		aj.mainBoard.setCell(5, 1, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 2, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 3, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 4, (byte)Cell.WHITE);
-		
-		aj.mainBoard.setCell(0, 2, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(1, 3, (byte)Cell.WHITE);
-		
-		aj.mainBoard.setCell(1, 1, (byte)Cell.WHITE);
-	//	aj.mainBoard.setCell(2, 2, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(3, 3, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(4, 4, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(5, 5, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(1, 4, (byte)Cell.WHITE);
-		
-		aj.mainBoard.setCell(2, 5, (byte)Cell.WHITE);
-		aj.mainBoard.setCell(3, 5, (byte)Cell.WHITE);
-		
-		aj.printBoard(System.out);
-		
-		//aj.mainBoard.updateBoard(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE));
-		
-		System.out.println("\n");
-		aj.printBoard(System.out);
-		
-		aj.mainBoard.checkCaptures(new GameMove(Cell.WHITE, new Point(2,2), Cell.WHITE), aj.scoreBoard);
-		
-		System.out.println("\n");
-		aj.printBoard(System.out);
-		
-		
-		/*
-		// build a root and a node and a board size 6
-		GameMove recentMove = new GameMove(Cell.BLACK, new Point(3,3), Cell.BLACK);
-		GameState newGs = new GameState(null, recentMove);
-		Root<GameState> root = new Root<GameState>(newGs); 
-		Node<GameState> node = new Node<GameState>(newGs, root);
-		Board currentBoard = new Board(7);
-		*/
-		
-		/*
-		 * 0 0 0 0 0 0
-		 * 0 0 0 0 0 0 
-		 * 0 0 0 0 0 0 
-		 * 0 0 0 0 0 0 
-		 * 0 0 0 0 0 0
-		 * 0 0 0 0 0 0
-		 
-		
-		//set Board
-		currentBoard.setCell(2, 2, (byte)Cell.BLACK);
-		currentBoard.setCell(3, 3, (byte)Cell.BLACK);
-		currentBoard.setCell(1, 1, (byte)Cell.BLACK);
-		currentBoard.setCell(3, 1, (byte)Cell.WHITE);
-
-		/*
-		 * 0 0 0 0 0 0
-		 * 0 2 0 1 0 0 
-		 * 0 0 2 0 0 0 
-		 * 0 0 0 2 0 0 
-		 * 0 0 0 0 0 0
-		 * 0 0 0 0 0 0
-		 */
-
-		// score the node
-		//Scoring.scoreState(node, root, currentBoard.getBoard());
-		
-		//System.out.println("boardScore is: " + node.getScore() + "\n");
-		
-		
-		
-		/*while (!aj.mainBoard.isFull()) {
-			//System.out.println("New cycle");
-			aj.makeMove();
-			GameMove gm = new GameMove(aj.currentPlayer, new Point(0,0));
-			while (!aj.mainBoard.isLegal(gm) && !aj.mainBoard.isFull()) {
-				int x = (int) Math.round(aj.mainBoard.getBoardSize()*Math.random());
-				int y = (int) Math.round(aj.mainBoard.getBoardSize()*Math.random());
-				gm = new GameMove(aj.currentPlayer, new Point(x,y));
-			}
-			aj.opponentMove(GameMove.getMove(gm));
-			
-			aj.mainBoard.printBoard();
-		}*/
-		
-		
-		
-	}
-	
 	// done
 	public int init(int n, int p) {
 		/* This function is called by the referee to initialise the player.
 		 *  Return 0 for successful initialization and -1 for failed one.
 		 */
-				
-		boolean playerCorrect = ((p == Cell.BLACK) || (p == Cell.WHITE));
-		//TODO how does this affect scalability?
-		// doesn't throw error, just fails
-		boolean sizeCorrect   = ((n == 6) || (n == 7)); // Is this only cases?			
-
-		if (!playerCorrect || !sizeCorrect) {
+		
+		if (p != Cell.BLACK && p!= Cell.WHITE) {
+			System.err.println("Invalid player piece id ("+p+").  Program terminating!");
 			return FAILURE;
 		}
-		
+		if (n < 4 || n > 9) {
+			System.err.println("Invalid board size ("+n+").  Program terminating!");
+			return FAILURE;
+		}
+
 		this.playerID = p;
 		this.opponentID = (p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
 		this.mainBoard = new Board((byte) n);
@@ -203,6 +100,7 @@ public class Ajmorton implements Player, Piece {
 		GameMove gm = GameMove.getGameMove(m, playerID);
 		
 		if(!mainBoard.isLegal(gm)) {
+			mainBoard.setCell(gm.getX(), gm.getY(), (byte) -1);
 			return FAILURE;
 		}
 
@@ -210,11 +108,8 @@ public class Ajmorton implements Player, Piece {
 		mainBoard.checkCaptures(gm, scoreBoard);
 		
 		currentMove++;
-		
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
-
-		
-		
+	
 		return SUCCESS;
 	}
 	
@@ -225,11 +120,28 @@ public class Ajmorton implements Player, Piece {
 		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD respectively
 		 */
 		
-		if (mainBoard.isFull()) {
-			return 3;
+		if (!mainBoard.isFull()) {
+			return Piece.EMPTY;
+		}
+		int[] pieces = new int[6];
+		
+		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
+			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
+				int v = mainBoard.getValueAtPosition(i, j);
+					if (v < 0) {
+						return Piece.INVALID;
+					}
+				pieces[mainBoard.getValueAtPosition(i, j)]++;
+			}
 		}
 		
-		return 0;
+		if (pieces[Cell.BLACK_CAP] > pieces[Cell.WHITE_CAP]) {
+			return Piece.WHITE;
+		} else if (pieces[Cell.WHITE_CAP] > pieces[Cell.BLACK_CAP]) {
+			return Piece.BLACK;
+		} else {
+			return Piece.DEAD;
+		}
 	}
 	
 	//
@@ -286,7 +198,7 @@ public class Ajmorton implements Player, Piece {
 				}
 				tBoard.setCell(i, j, (byte) p);
 
-				GameMove gm = new GameMove(p, i, j);
+				GameMove gm = new GameMove(p, i, j, 0);
 				GameState gs = new GameState(node.getData(), gm);
 				Node<GameState> newNode = new Node<GameState>(gs, node);
 				newNode.getData().setDepth(node.getData().getDepth()+1);
