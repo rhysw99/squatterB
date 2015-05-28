@@ -1,30 +1,18 @@
 package aiproj.agent.decisionTree;
 
-import java.awt.Point;
 import aiproj.agent.Cell;
 import aiproj.agent.board.Board;
 import aiproj.agent.decisionTree.Tree.Node;
-import aiproj.agent.decisionTree.Tree.Root;
-import aiproj.squatter.Piece;
 
 //TODO remove statics from methods
 
 public class Scoring {
-
-	// hold-over location, will move to tree.java most likely
 	
-	
-	/* Plan
-	 * Scoring only has to take place on moves by the player, moves by the opponent are accounted for in this test
-	 */
-	
-	public static void scoreState(Node<GameState> currentNode, Root<GameState> rootNode, byte[][] currentBoard){
-
+	public static void scoreState(Node<GameState> currentNode, Board board, int currentPlayer) {
 		//TODO Node needs player capture difference (scoreDifference)
 		//		Update will need to modify them
 		// only consider top corner for aggression?
 		// move to bottom right? will probably see less attention from similar algorithms
-
 
 		// score weightings for different conditions, must be so that more 
 		// important weights are larger than any combination of all lesser weights
@@ -34,19 +22,17 @@ public class Scoring {
 			shortDiagWeight   = 3,
 			centerCellWeight  = 2,
 			centerCrossWeight = 1;
+		
+		byte[][] currentBoard = board.getBoard();
 
 		int score = 0;
-		int playerID = currentNode.getData().getMove().getPlayerID();	//only care when player makes move, not opponent
+		int playerID = currentPlayer;	//only care when player makes move, not opponent
 
 
 		// check if either player has scored since root, if they have no further analysis is needed
-		int captureDifference = (currentNode.getCapDifference() - rootNode.getCapDifference());
-		if(captureDifference != 0)	{currentNode.setScore(captureDifference*captureWeight); return;}
-
 
 		//checks if most recent move was on a diagonal cell (cells a chess bishop could reach if it started at the center)
 		// these are the important cells for our game plan
-				
 		
 		int mostRecentMoveX = currentNode.getData().getMove().getX();
 		int mostRecentMoveY = currentNode.getData().getMove().getY();
@@ -77,10 +63,10 @@ public class Scoring {
 
 			// check for short diags, 8 possible combos
 			// -1 as value is irrelevant for here
-			GameMove a = new GameMove(E, 2, 0, -1),	// the important cells from short diag
-					 b = new GameMove(P, 1, 1, -1),	//		0 0 E 0 0
-					 c = new GameMove(E, 3, 1, -1),	//		0 P 0 E 0
-					 d = new GameMove(P, 2, 2, -1);	//		0 0 P 0 0
+			GameMove a = new GameMove(E, 2, 0),	// the important cells from short diag
+					 b = new GameMove(P, 1, 1),	//		0 0 E 0 0
+					 c = new GameMove(E, 3, 1),	//		0 P 0 E 0
+					 d = new GameMove(P, 2, 2);	//		0 0 P 0 0
 													//		0 0 0 0 0
 													//		0 0 0 0 0
 
@@ -95,12 +81,12 @@ public class Scoring {
 				if(match){score += shortDiagWeight; System.out.println("shortMatch");}
 			}// end for transform (0; ++; < checks)
 			
-			if(score <shortDiagWeight){currentNode.setScore(score);	return;}	//if no short diags found end scoring
+			if(score <shortDiagWeight){currentNode.getData().setScore(score);	return;}	//if no short diags found end scoring
 			
 			
 			// check for long diags 4 possible combos
-						GameMove e = new GameMove(E, 4, 2, -1),	// the important cells from long diag (builds off short diag)
-								 f = new GameMove(P, 3, 3, -1);	//		0 0 E 0 0
+						GameMove e = new GameMove(E, 4, 2),	// the important cells from long diag (builds off short diag)
+								 f = new GameMove(P, 3, 3);	//		0 0 E 0 0
 								 								//		0 P 0 E 0
 								 								//		0 0 P 0 E
 								 								//		0 0 0 P 0
@@ -123,7 +109,7 @@ public class Scoring {
 	
 						
 						// check for lambdas 4 possible combos
-								c = new GameMove(P, 3, 1, -1);	// the important cells for lambda (alters long diag)
+								c = new GameMove(P, 3, 1);	// the important cells for lambda (alters long diag)
 																		//		0 0 E 0 0
 								 										//		0 P 0 P 0
 								 										//		0 0 P 0 E
@@ -145,20 +131,16 @@ public class Scoring {
 						
 						
 						// no more scoring to do
-						currentNode.setScore(score);	
+						currentNode.getData().setScore(score);	
 						return;
 						
 		}// end if onDiag
 
 		// no scorable pieces we care about
-		currentNode.setScore(score);	//score is 0
+		currentNode.getData().setScore(score);	//score is 0
 		return;
 	}
 	
-	
-
-
-
 	public static boolean compareMatch5x5(GameMove move, byte[][] board, int transformType, int playerID){
 
 		int n 		  = 5,									// boardSize always 5 as only called for top left 5x5

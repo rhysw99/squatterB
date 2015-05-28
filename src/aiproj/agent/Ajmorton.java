@@ -2,8 +2,7 @@ package aiproj.agent;
 
 // TODO
 // move Scoring to correct location (find where that is)
-// pathfind still needs to update capDifference, need to pass reference to recentNode in somewhere
-// timing and space need to be reduced - alteration of child generation may accomplish
+// pathfind still needs to update capDifference, need to pass reference to
 // fill out comments.txt
 // do we use alpha beta?
 // scoreMap for 6x6 is likely wrong
@@ -11,6 +10,7 @@ package aiproj.agent;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import aiproj.agent.board.*;
 import aiproj.agent.decisionTree.*;
@@ -182,11 +182,13 @@ public class Ajmorton implements Player, Piece {
 		 */
 		
 		if (p != Cell.BLACK && p!= Cell.WHITE) {
-			System.err.println("Invalid player piece id ("+p+").  Program terminating!");
+			System.err.println("Invalid player piece id ("+p+"). "
+					+ "Program terminating!");
 			return FAILURE;
 		}
 		if (n < 4 || n > 9) {
-			System.err.println("Invalid board size ("+n+").  Program terminating!");
+			System.err.println("Invalid board size ("+n+").  "
+					+ "Program terminating!");
 			return FAILURE;
 		}
 
@@ -210,45 +212,52 @@ public class Ajmorton implements Player, Piece {
 
 		Tree<GameState> decisionTree = buildTree();
 
-		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().iterator();
+		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().
+				iterator();
 		Node<GameState> best = null;
 
 		while (it.hasNext()) {
 			Node<GameState> n = it.next();
-			if (best == null || n.getData().getScore() > best.getData().getScore()) {
+			if (best == null ||
+					n.getData().getScore() > best.getData().getScore()) {
+				System.out.println("Node score: "+n.getData().getScore());
 				best = n;
 			}
 		}
 		
 		gm = best.getData().getMove();
 
-		makeMove(gm);
+		makeMove(best.getData());
 
 		currentMove++;
-		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
+		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
+														 Cell.WHITE);
 		return GameMove.getMove(gm);
 	}
 	
 	//done 
 	public int opponentMove(Move m) {
 		
-		/* Function called by referee to inform the player about the opponent's move
+		/* Function called by referee to inform the player about the
+		 * opponent's move.
 		 *  Return -1 if the move is illegal otherwise return 0
 		 */
 		
-		GameMove gm = GameMove.getGameMove(m, playerID);
+		GameMove gm = GameMove.getGameMove(m);
 		
 		if(!mainBoard.isLegal(gm)) {
 			mainBoard.setCell(gm.getX(), gm.getY(), (byte) -1);
 			return FAILURE;
 		}
+		
+		GameState gs = new GameState(null, gm);
 
 		mainBoard.setCell(gm);
-		mainBoard.checkCaptures(gm, scoreBoard);
+		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
 		
 		currentMove++;
-		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
-	
+		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
+														 Cell.WHITE);
 		return SUCCESS;
 	}
 	
@@ -256,7 +265,8 @@ public class Ajmorton implements Player, Piece {
 	public int getWinner() {
 	//TODO
 		/* This function when called by referee should return the winner
-		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD respectively
+		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD
+		 *	respectively.
 		 */
 		
 		if (!mainBoard.isFull()) {
@@ -273,6 +283,9 @@ public class Ajmorton implements Player, Piece {
 				pieces[mainBoard.getValueAtPosition(i, j)]++;
 			}
 		}
+		
+		// TODO CHANGE THIS!
+		// TODO use gamestate knowledge of captures to compute winner
 		
 		if (pieces[Cell.BLACK_CAP] > pieces[Cell.WHITE_CAP]) {
 			return Piece.WHITE;
@@ -297,9 +310,14 @@ public class Ajmorton implements Player, Piece {
 		
 	}
 	
-	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node, int maxDepth, Board pBoard, int a, int b) {		
-		if (maxDepth <= 0 || node.getData().getDepth() == mainBoard.getFreeSpaces()) {
-			node.getData().calculateScore(null);
+	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
+			int maxDepth, Board pBoard, int a, int b) {
+		if (maxDepth <= 0 ||
+				node.getData().getDepth() == mainBoard.getFreeSpaces()) {
+			pBoard.checkCaptures(node.getData(), scoreBoard, currentPlayer);
+			Scoring.scoreState(node, pBoard, currentPlayer);
+			pBoard = null;
+			System.out.println("SCore: "+node.getData().getScore());
 			return node.getData().getScore();
 		}
 			
@@ -311,7 +329,9 @@ public class Ajmorton implements Player, Piece {
 			p = playerID;
 		}
 		
-		boolean maximizingPlayer = (p==Cell.WHITE);
+		boolean maximizingPlayer = (p == Cell.WHITE);
+		
+		TreeSet<Long> previousNodes = new TreeSet<Long>();
 		
 		/* Set board with all parent moves */
 		Node<GameState> parentNode = node;
@@ -336,27 +356,37 @@ public class Ajmorton implements Player, Piece {
 					tBoard = Board.copy(pBoard);
 				}
 				tBoard.setCell(i, j, (byte) p);
-
-				GameMove gm = new GameMove(p, i, j, 0);
+			
+				GameMove gm = new GameMove(p, i, j);
 				GameState gs = new GameState(node.getData(), gm);
 				Node<GameState> newNode = new Node<GameState>(gs, node);
 				newNode.getData().setDepth(node.getData().getDepth()+1);
-
+				boolean captures = tBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+			
+				/* alpha beta pruning */
 				if (maximizingPlayer) {
-					int newV = DLSBuildAB(tree, newNode, maxDepth-1, pBoard, a, b);
+					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
+							tBoard, a, b);
 					v = (newV > v) ? newV : v;
 					a = (a > v) ? a:v;
 					if (b <= a) {
 						break;
 					}
 				} else {
-					int newV = DLSBuildAB(tree, newNode, maxDepth-1, pBoard, a, b);
+					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
+							tBoard, a, b);
 					v = (newV < v) ? newV : v;
 					b = (b < v) ? b:v;
 					if (b <= a) {
 						break;
 					}
 				}
+				
+				if (captures) {
+					tBoard = null;
+				}
+				
+				//generateZobristKeys(previousNodes, tBoard);
 				
 				if (newNode.getData().getDepth() == 1) {
 					tree.getRoot().getChildren().add(newNode);
@@ -385,15 +415,27 @@ public class Ajmorton implements Player, Piece {
 	}
 	
 	public Tree<GameState> buildTree() {
-		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
-		DLSBuildAB(decisionTree, decisionTree.getRoot(), MAX_PLY, Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
+		GameState gs = new GameState(null, null);
+		Tree<GameState> decisionTree = new Tree<GameState>(gs);
+		DLSBuildAB(decisionTree, decisionTree.getRoot(), MAX_PLY,
+				Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
 		return decisionTree;
 	}
 	
-	public void makeMove(GameMove m) {
-		mainBoard.setCell(m);
-		mainBoard.checkCaptures(m, scoreBoard);
-		moves.add(m);
+	public void generateZobristKeys(TreeSet<Long> l, Board b) {
+		for (int i = 0 ; i < 7; i++) {
+			Board t = b.transform(i);
+			long key = t.hashKey();
+			if (!l.contains(key)) {
+				l.add(key);
+			}
+		}
+	}
+	
+	public void makeMove(GameState gs) {
+		mainBoard.setCell(gs.getMove());
+		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+		//moves.add(m);
 	}
 	
 	public Board getBoard() {

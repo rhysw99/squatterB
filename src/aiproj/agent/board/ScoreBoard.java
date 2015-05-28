@@ -26,7 +26,8 @@ public class ScoreBoard extends Board {
 		for(i = 0; i < boardSize; i++) {
 			for(j = 0; j < boardSize; j++) {
 				// If cell on the outside
-				if(j == 0 || i == 0 || i == boardSize - 1 || j == boardSize - 1){
+				if(j == 0 || i == 0 || i == boardSize - 1 ||
+						j == boardSize - 1) {
 					board[i][j] = maxValue;								
 				} else {
 					vertScore = Math.abs((float)(boardSize - 1)/2 - i);
