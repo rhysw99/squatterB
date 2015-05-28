@@ -8,11 +8,15 @@ public class GameState {
 	/* Do we want to store a comprehensive history of moves or store one move per node and traverse up the tree (and hence back down) to construct the board state? */
 	private GameMove move;
 	
+	private byte[] moves;
+	
 	private boolean[] transformFlags;
 	
-	private int score = Integer.MAX_VALUE;
+	private int score = Integer.MIN_VALUE;
 	
 	private int depth = 0;
+	
+	public int id = 0;
 	
 	private static final byte FLIP_VERTICAL = 0;
 	private static final byte FLIP_HORIZONTAL = 1;
@@ -21,6 +25,8 @@ public class GameState {
 	
 	public GameState(GameState parent, GameMove currentMove) {
 		this.move = currentMove;
+		this.id = (int) Math.round(Math.random() * 1000000);
+		this.moves = new byte[4];
 		
 		if (parent != null) {
 			transformFlags = parent.transformFlags;

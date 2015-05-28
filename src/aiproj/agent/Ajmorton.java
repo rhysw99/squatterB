@@ -1,6 +1,5 @@
 package aiproj.agent;
 
-
 // TODO
 // move Scoring to correct location (find where that is)
 // pathfind still needs to update capDifference, need to pass reference to recentNode in somewhere
@@ -9,11 +8,9 @@ package aiproj.agent;
 // do we use alpha beta?
 // scoreMap for 6x6 is likely wrong
 
-import java.awt.Point;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Stack;
 
 import aiproj.agent.board.*;
 import aiproj.agent.decisionTree.*;
@@ -29,6 +26,8 @@ public class Ajmorton implements Player, Piece {
 	public static final boolean DEBUG = false;
 
 	private int playerID;
+	private int opponentID;
+	
 	private int currentPlayer;
 	private int currentMove;
 	
@@ -180,18 +179,19 @@ public class Ajmorton implements Player, Piece {
 	public int init(int n, int p) {
 		/* This function is called by the referee to initialise the player.
 		 *  Return 0 for successful initialization and -1 for failed one.
-		 */	
-				
-		boolean playerCorrect = ((p == BLACK) || (p == WHITE));
-		//TODO how does this affect scalability?
-		// doesn't throw error, just fails
-		boolean sizeCorrect   = ((n == 6) || (n == 7)); // Is this only cases?			
-
-		if (!playerCorrect || !sizeCorrect) {
+		 */
+		
+		if (p != Cell.BLACK && p!= Cell.WHITE) {
+			System.err.println("Invalid player piece id ("+p+").  Program terminating!");
 			return FAILURE;
 		}
-		
+		if (n < 4 || n > 9) {
+			System.err.println("Invalid board size ("+n+").  Program terminating!");
+			return FAILURE;
+		}
+
 		this.playerID = p;
+		this.opponentID = (p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
 
@@ -199,7 +199,7 @@ public class Ajmorton implements Player, Piece {
 		
 		this.currentPlayer = Cell.WHITE;
 		
-		Miscellaneous.init();
+		Miscellaneous.init(mainBoard.getBoardSize());
 		
 		return SUCCESS;
 	}
@@ -207,44 +207,26 @@ public class Ajmorton implements Player, Piece {
 	
 	public Move makeMove() {
 		GameMove gm;
-		if (currentMove == 0) {
-			gm = new GameMove(Cell.WHITE, new Point(mainBoard.getBoardSize()/2, mainBoard.getBoardSize()/2), playerID);
-		} else {
-			Tree<GameState> decisionTree = buildTree();
-			
-			int maxDepth = currentMove+MAX_PLY;
-			maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
-			
-			Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().iterator();
-			Node<GameState> best = null;
-	
-			while (it.hasNext()) {
-				Node<GameState> n = it.next();
-				if (best == null || n.getData().getScore() > best.getData().getScore()) {
-					best = n;
-				}
+
+		Tree<GameState> decisionTree = buildTree();
+
+		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().iterator();
+		Node<GameState> best = null;
+
+		while (it.hasNext()) {
+			Node<GameState> n = it.next();
+			if (best == null || n.getData().getScore() > best.getData().getScore()) {
+				best = n;
 			}
-			gm = best.getData().getMove();
 		}
 		
+		gm = best.getData().getMove();
+
 		makeMove(gm);
-		
+
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
-		
 		return GameMove.getMove(gm);
-	}
-	
-	private void cycleUp(Node<GameState> node) {
-		int depth = node.getData().getDepth();
-		while (depth > currentMove) {
-			Node<GameState> parent = node.getParent();
-			if (node.getData().getScore() < parent.getData().getScore()) {
-				parent.getData().setScore(node.getData().getScore());
-			}
-			node = parent;
-			depth--;
-		}
 	}
 	
 	//done 
@@ -257,16 +239,16 @@ public class Ajmorton implements Player, Piece {
 		GameMove gm = GameMove.getGameMove(m, playerID);
 		
 		if(!mainBoard.isLegal(gm)) {
+			mainBoard.setCell(gm.getX(), gm.getY(), (byte) -1);
 			return FAILURE;
 		}
 
-		mainBoard.updateBoard(gm);
+		mainBoard.setCell(gm);
 		mainBoard.checkCaptures(gm, scoreBoard);
 		
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
-		
-		
+	
 		return SUCCESS;
 	}
 	
@@ -277,11 +259,28 @@ public class Ajmorton implements Player, Piece {
 		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD respectively
 		 */
 		
-		if (mainBoard.isFull()) {
-			return 3;
+		if (!mainBoard.isFull()) {
+			return Piece.EMPTY;
+		}
+		int[] pieces = new int[6];
+		
+		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
+			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
+				int v = mainBoard.getValueAtPosition(i, j);
+					if (v < 0) {
+						return Piece.INVALID;
+					}
+				pieces[mainBoard.getValueAtPosition(i, j)]++;
+			}
 		}
 		
-		return 0;
+		if (pieces[Cell.BLACK_CAP] > pieces[Cell.WHITE_CAP]) {
+			return Piece.WHITE;
+		} else if (pieces[Cell.WHITE_CAP] > pieces[Cell.BLACK_CAP]) {
+			return Piece.BLACK;
+		} else {
+			return Piece.DEAD;
+		}
 	}
 	
 	//
@@ -298,146 +297,101 @@ public class Ajmorton implements Player, Piece {
 		
 	}
 	
-	public Tree<GameState> buildTree() {
-		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null), playerID);
-		Root<GameState> root = decisionTree.getRoot();
-
-		int p = currentPlayer;
-		int depth = currentMove;
-		
-		int leafNodes = 0;
-
-		root.getData().setDepth(depth);
-		Stack<Node<GameState>> nodes = new Stack<Node<GameState>>();
-		nodes.push(root);
-		
-
-		int maxDepth = depth + MAX_PLY;
-		maxDepth = (maxDepth > mainBoard.getBoardSpaces() ? mainBoard.getBoardSpaces() : maxDepth);
-		while (!nodes.isEmpty()) {
-			Node<GameState> currentNode = nodes.pop();
+	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node, int maxDepth, Board pBoard, int a, int b) {		
+		if (maxDepth <= 0 || node.getData().getDepth() == mainBoard.getFreeSpaces()) {
+			node.getData().calculateScore(null);
+			return node.getData().getScore();
+		}
 			
-			Board parentBoard = Board.copy(mainBoard);
-			
-			/* Set board for all parent states */
-			Node<GameState> parentNode = currentNode.getParent();
-			while (parentNode != null) {
-				if (parentNode.getData() != null) {
-					if (parentNode.getData().getMove() != null) {
-						parentBoard.setCell(parentNode.getData().getMove());
-					}
-				}
-				parentNode = parentNode.getParent();
-			}
-			
-			/*System.out.println("parent board");
-			parentBoard.printBoard();*/
-			
-			if (currentNode.getData().getMove() != null && currentNode.getData().getDepth() < (maxDepth-1)) {
-				checkUniqueTransforms(currentNode, parentBoard);
-			}
-			
-			if (currentNode.getData().getDepth() >= maxDepth) {
-				cycleUp(currentNode);
-				continue;
-			}
-			
-			for (int j = 0; j < mainBoard.getBoardSize(); j++) {
-				for (int i = 0; i < mainBoard.getBoardSize(); i++) {
-					//TODO Switch to new move class?
-					GameMove m = new GameMove(p, new Point(i, j), playerID);
-
-					if (parentBoard.isLegal(m)) {
-						Board tBoard = Board.copy(mainBoard);
-						if (currentNode.getData().getDepth() == (maxDepth-1)) {
-							leafNodes++;
-						}
-						
-						tBoard.updateBoard(m);
-						
-						ArrayList<Node<GameState>> siblings = currentNode.getChildren();
-						Iterator<Node<GameState>> it = siblings.iterator();
-						
-						GameState newGS = new GameState(root.getData(), m);
-						Node<GameState> newNode = new Node<GameState>(newGS, currentNode);
-						newNode.getData().setDepth(currentNode.getData().getDepth() + 1);
-						
-						
-						boolean unique = true;
-						if (currentNode.getData().getDepth() < (maxDepth-1)) {
-							while (it.hasNext()) {
-								Node<GameState> sibling = it.next();
-								if (!checkNodesUnique(newNode, sibling, parentBoard, tBoard)) {
-									//System.out.println("Removed node!!");
-									unique = false;
-									break;
-								}
-							}
-						}
-						
-						if (unique) {
-							if (currentNode.getData().getDepth() == (maxDepth-1)) {
-								tBoard.checkCaptures(m, scoreBoard);
-								newNode.getData().calculateScore(tBoard);
-							}
-							currentNode.insert(newNode);
-							nodes.add(newNode);
-						}
-						tBoard = null;
-					}
-				}
-			}
-			// END OF TURN
-			p = ((p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE);
-			
-			// Clean up child nodes
-			if (currentNode.getData().getDepth() > currentMove) {
-				currentNode.setChildren(null);
-			}
+		int p;		
+		if (node.getData().getMove() != null) {
+			p = node.getData().getMove().getPlayer();
+			p = (p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
+		} else {
+			p = playerID;
 		}
 		
-		//System.out.println("Leaf nodes: "+leafNodes);
+		boolean maximizingPlayer = (p==Cell.WHITE);
+		
+		/* Set board with all parent moves */
+		Node<GameState> parentNode = node;
+		while (parentNode != null) {
+			if (parentNode.getData() != null) {
+				if (parentNode.getData().getMove() != null) {
+					pBoard.setCell(parentNode.getData().getMove());
+				}
+			}
+			parentNode = parentNode.getParent();
+		}
 
+		Board tBoard = Board.copy(pBoard);
+		
+		int v = (maximizingPlayer) ? Integer.MIN_VALUE:Integer.MAX_VALUE;
+
+		for (int k = 0; k < pBoard.getBoardSpaces(); k++) {
+			int j = k / pBoard.getBoardSize();
+			int i = k - j*pBoard.getBoardSize();
+			if (pBoard.isLegal(i, j, p)) {
+				if (tBoard == null) {
+					tBoard = Board.copy(pBoard);
+				}
+				tBoard.setCell(i, j, (byte) p);
+
+				GameMove gm = new GameMove(p, i, j, 0);
+				GameState gs = new GameState(node.getData(), gm);
+				Node<GameState> newNode = new Node<GameState>(gs, node);
+				newNode.getData().setDepth(node.getData().getDepth()+1);
+
+				if (maximizingPlayer) {
+					int newV = DLSBuildAB(tree, newNode, maxDepth-1, pBoard, a, b);
+					v = (newV > v) ? newV : v;
+					a = (a > v) ? a:v;
+					if (b <= a) {
+						break;
+					}
+				} else {
+					int newV = DLSBuildAB(tree, newNode, maxDepth-1, pBoard, a, b);
+					v = (newV < v) ? newV : v;
+					b = (b < v) ? b:v;
+					if (b <= a) {
+						break;
+					}
+				}
+				
+				if (newNode.getData().getDepth() == 1) {
+					tree.getRoot().getChildren().add(newNode);
+				}
+
+				if (tBoard != null) {
+					tBoard.resetCell(i, j, (byte) p);
+				}
+
+			}
+		}
+		/* Reset parent board to original state */
+		parentNode = node;
+		while (parentNode != null) {
+			if (parentNode.getData() != null) {
+				if (parentNode.getData().getMove() != null) {
+					pBoard.resetCell(parentNode.getData().getMove());
+				}
+			}
+			parentNode = parentNode.getParent();
+		}
+		
+		node.getData().setScore(v);
+		
+		return v;
+	}
+	
+	public Tree<GameState> buildTree() {
+		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
+		DLSBuildAB(decisionTree, decisionTree.getRoot(), MAX_PLY, Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
 		return decisionTree;
 	}
 	
-	private void checkUniqueTransforms(Node<GameState> currentNode, Board tBoard) {
-		GameState gs = currentNode.getData();
-		boolean[] transformFlags = gs.getTransformFlags();
-		for (int i = 0; i < transformFlags.length; i++) {
-			if (transformFlags[i]) {
-				Board transBoard = tBoard.transform(i);
-				if (!Board.checkUniqueStates(tBoard, transBoard, currentNode.getData().getMove())) {
-					//System.out.println("Set flag to false: "+i);
-					transformFlags[i] = false;
-				}
-			}
-		}
-	}
-	
-	private boolean checkNodesUnique(Node<GameState> newNode, Node<GameState> sibling, Board pBoard, Board nBoard) {
-		GameState gs = newNode.getData();
-		boolean[] transformFlags = gs.getTransformFlags();
-		Board sBoard = Board.copy(pBoard);
-		sBoard.setCell(sibling.getData().getMove());
-		for (int i = 0; i < transformFlags.length; i++) {
-			if (transformFlags[i]) {
-				//TODO don't generate new boards for comparison, just compare
-				Board transBoard = nBoard.transform(i);
-				if (sBoard.equals(transBoard)) {
-					//System.out.println("Duplicate state!!!");
-					return false;
-				}
-			}
-		}
-		sBoard = null;
-		return true;
-	}
-	
-
 	public void makeMove(GameMove m) {
-		//System.out.println("Move: X:"+m.getLocation().x+" - y: "+m.getLocation().y+" - player: "+m.getPlayer());
-		mainBoard.updateBoard(m);
+		mainBoard.setCell(m);
 		mainBoard.checkCaptures(m, scoreBoard);
 		moves.add(m);
 	}

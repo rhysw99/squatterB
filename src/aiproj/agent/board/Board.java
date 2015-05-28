@@ -1,9 +1,12 @@
 package aiproj.agent.board;
 
+
 import aiproj.agent.Cell;
 import aiproj.agent.Miscellaneous;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
+import aiproj.squatter.Piece;
+
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +16,6 @@ public class Board {
 	protected byte[][] board;			//the game board
 
 	protected int boardSize;
-
 	/* CONSTRUCTOR */
 	public Board(int boardSize){
 		this(new byte[boardSize][boardSize], boardSize);
@@ -24,17 +26,21 @@ public class Board {
 		this.boardSize = boardSize;
 	}
 
-	/* SETTERS */
+	/* SETTER */
 	public void setCell(GameMove move) {
-		board[move.getLocation().y][move.getLocation().x] = (byte) move.getPlayer();
+		board[move.getY()][move.getX()] = move.getPlayer();
 	}
-
+	
 	public void setCell(int x, int y, byte v) {
 		board[y][x] = v;
 	}
 
 	public void resetCell(GameMove move) {
-		board[move.getLocation().y][move.getLocation().x] = Cell.EMPTY;
+		board[move.getY()][move.getX()] = Cell.EMPTY;
+	}
+	
+	public void resetCell(int i, int j, int p) {
+		board[j][i] = Piece.EMPTY;
 	}
 
 	/* GETTER */
@@ -53,21 +59,35 @@ public class Board {
 	public byte[][] getBoard() {
 		return board;
 	}
+	
+	public int getFreeSpaces() {
+		int count = 0;
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				if (board[j][i] == Cell.EMPTY) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
 
-
-	/* METHODS */
 	public boolean isLegal(GameMove move){
-		if (!onBoard(move.getLocation())) {
+		return isLegal(move.getX(), move.getY(), move.getPlayer());
+	}
+	
+	public boolean isLegal(int x, int y, int p) {
+		if (!onBoard(x, y)) {
 			return false;
-		} else if (isOccupied(move.getLocation())) {
+		} else if (isOccupied(x, y)) {
 			return false;
 		}
 
 		return true;
 	}
-
-	public void updateBoard(GameMove move) {		
-		board[move.getLocation().y][move.getLocation().x] = move.getPlayer();
+	
+	public byte getValueAtPosition(int x, int y) {
+		return board[y][x];
 	}
 
 	public boolean onBoard(Point p) {
@@ -76,7 +96,7 @@ public class Board {
 		}
 		return false;
 	}
-
+	
 	public boolean onBoard(int x, int y) {
 		if (x >= 0 && y >= 0 && x < boardSize && y < boardSize) {
 			return true;
@@ -87,29 +107,33 @@ public class Board {
 	public boolean isOccupied(Point p) {
 		return (board[p.y][p.x] != Cell.EMPTY);
 	}
+	
+	public boolean isOccupied(int x, int y) {
+		return (board[y][x] != Cell.EMPTY);
+	}
 
 	public boolean onEdge(Point p) {
-		if (p.x == 0 || p.y == 0 || p.x == boardSize-1 || p.y == boardSize-1) {
+		return onEdge(p.x, p.y);
+	}
+	public boolean onEdge(int x, int y) {
+		if (x == 0 || y == 0 || x == boardSize-1 || y == boardSize-1) {
 			return true;						
 		}
 		return false;
 	}
-
+	
 	public static Board copy(Board b) {
 		int size = b.getBoardSize();
 		byte[][] board = b.getBoard();
-		byte[][] newBoard = new byte[size][size];
-
+		byte[][] newBoard = new byte[size][];
+		
 		for (int j = 0; j < size; j++) {
-			for (int i = 0; i < size; i++) {
-				newBoard[j][i] = board[j][i];
-			}
+			newBoard[j] = board[j].clone();
 		}
-
+		
 		return new Board(newBoard, size);
 	}
-
-	// TODO CHANGE THIS FUNCTION
+	
 	public boolean isFull() {
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
@@ -120,22 +144,40 @@ public class Board {
 		}
 		return true;
 	}
+	
+	public long hashKey() {
+		long key = 0;
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				if (board[j][i] != Cell.EMPTY) {
+					key ^= Miscellaneous.zobrist[j*boardSize + i][board[j][i]];
+				}
+			}
+		}
+		return key;
+	}
+	
+	public long updateKey(long oldKey, int i, int j, int p) {
+		return oldKey ^ Miscellaneous.zobrist[j*boardSize + i][p];
+	}
 
-	public void checkCaptures(GameMove move, ScoreBoard sb) {
-		//System.out.println("Move: x: "+move.getLocation().x+ " - y: "+move.getLocation().y+" - p: "+move.getPlayer());
+	public boolean checkCaptures(GameMove move, ScoreBoard sb) {
+		//System.out.println("Move: x: "+move.getX()+ " - y: "+move.getY()+" - p: "+move.getPlayer());
 		/* Find the point adjacent from the move made which is closest to a corner.*/
-		int yOffset  = (move.getLocation().y <= boardSize/2) ? -1:1;
-		int xOffset = (move.getLocation().x <= boardSize/2) ? -1:1;
-
-		Point centerCell = new Point(move.getLocation().x, move.getLocation().y);
-		Point offset = new Point(xOffset, yOffset);
-
-		int centerCellX = centerCell.x,
-			centerCellY = centerCell.y;
+		int yOffset  = (move.getY() <= boardSize/2) ? -1:1;
+		int xOffset = (move.getX() <= boardSize/2) ? -1:1;
 		
-		int pathStartX = centerCellX + offset.x, 
-			pathStartY = centerCellY + offset.x;
+		boolean boardModified = false;
 
+		Point centerCell = new Point(move.getX(), move.getY());
+		Point offset = new Point(xOffset, yOffset);		
+		
+		int pathStartX = move.getX() + offset.x;
+		int pathStartY = move.getY() + offset.y;
+
+		int centerCellX = centerCell.x;
+		int	centerCellY = centerCell.y;
+		
 		Point endCell = new Point(pathStartX, pathStartY);
 		
 		ArrayList<Point> startingPaths = new ArrayList<Point>();
@@ -146,19 +188,16 @@ public class Board {
 			pathStartY = centerCellY + offset.y;
 			// We have cycled around with with no possible points to start pathing from, therefore no captures.
 			if (pathStartX == endCell.x && pathStartY == endCell.y) {
-				return;
+				return boardModified;
 			}
 		}
-
+		
 		// We have found a piece surrounding the move that matches!
-		
 		endCell.setLocation(pathStartX, pathStartY);
-
 		offset = Miscellaneous.nextCell(offset);
-		pathStartX = centerCell.x + offset.x;
-		pathStartY = centerCell.y + offset.y;
+		pathStartX = centerCellX + offset.x;
+		pathStartY = centerCellY + offset.y;
 
-		
 		boolean newPath = true;
 		while (!(pathStartX == endCell.x && pathStartY == endCell.y)) {
 			if (onBoard(pathStartX, pathStartY)) {
@@ -167,27 +206,32 @@ public class Board {
 						startingPaths.add(new Point(pathStartX, pathStartY));
 						newPath = false;
 					} else {
+						newPath = true;
 					}
-				} else {
-					newPath = true;
 				}
 			}
 			offset = Miscellaneous.nextCell(offset);
-			pathStartX = centerCell.x + offset.x;
-			pathStartY = centerCell.y + offset.y;
-		}		
-
-		// Iterate through all our starting points and attempt to pathfind to edge from there
+			pathStartX = centerCellX + offset.x;
+			pathStartY = centerCellY + offset.y;
+		}
+		
+		// Loop through all our starting points and attempt to pathfind to edge from there
 		Iterator<Point> it = startingPaths.iterator();
 		while(it.hasNext()) {
 			Point p = it.next();
-			pathfind(p, move, sb);
+			 if (pathfind(p, move, sb)) {
+				 //Captures made
+				 boardModified = true;
+			 }
 		}
+		return boardModified;
 	}
 
-	private void pathfind(Point startPath, GameMove move, ScoreBoard sb) {
+	private boolean pathfind(Point startPath, GameMove move, ScoreBoard sb) {
 		byte[][] explored = new byte[boardSize][boardSize];
 		byte[][] scoreMap = sb.getBoard();
+		
+		boolean captures = false;
 
 		//start pathfinding
 		int i,j;
@@ -206,21 +250,20 @@ public class Board {
 
 		// make sure start point is on board
 		if (!onBoard(startPath)) {
-			return;
+			return false;
 		}
 
 		//check if already at edge
 		if (onEdge(startPath)) {
-			return;
+			return false;
 		}
-
+		
 		//add cell to explored list, all necessary checks are done
 		exploredList.add(startPath);
 		explored[startPath.y][startPath.x] = 1;
-
-
+		
 		Point currCell = startPath;
-
+		
 		for(i = -1; i <= 1; i++) {
 			for(j = -1; j <= 1; j++) {
 				if((i != 0) || (j != 0)) {	// not current cell
@@ -243,10 +286,10 @@ public class Board {
 
 		boolean exhausted = false;
 
-		while(!exhausted){
+		while(!exhausted) {
 			exhausted = true;
 			outerloop:
-				for(i = sb.getMaxScore(); i >= 0; i--){							// start looking at highest scoring possibles
+				for(i = sb.getMaxScore(); i >= 0; i--) {							// start looking at highest scoring possibles
 					if(!potentialMoves.get(i).isEmpty()) {							// is possible point of score i available?
 						exhausted = false;
 
@@ -288,8 +331,8 @@ public class Board {
 							exploredList.add(newCell);
 
 							// Are we at one of the edge nodes?
-							if(onEdge(new Point(newCell.x, newCell.y))){
-								return;	// no new cells in capture list
+							if(onEdge(newCell.x, newCell.y)){
+								return false;	// no new cells in capture list
 							}
 
 							//else add surrounding cells to potentialMoves
@@ -328,9 +371,11 @@ public class Board {
 			int x = exploredList.get(0).x;
 			int y = exploredList.get(0).y;
 			//TODO Change piece structure
-			GameMove newCap = new GameMove(move.getPlayer(), new Point(x,y), playerID);
+			GameMove newCap = new GameMove(move.getPlayer(), x, y, playerID);
 
 			captureCell(newCap);
+			captures = true;
+			
 
 			exploredList.remove(0);
 
@@ -339,17 +384,17 @@ public class Board {
 			//Node.setCaptureDifference(playerCapture);
 		}
 
-		return;
+		return captures;
 	}
 
 	private void captureCell(GameMove capMove){
 		// TODO cell values (1==BLACK etc are still not set, suggest following modified Peice interface)
 
-		int y = (int)capMove.getLocation().getY();
-		int x = (int)capMove.getLocation().getX();
+		int y = (int)capMove.getY();
+		int x = (int)capMove.getX();
 		int player = capMove.getPlayer();
 
-		if(player == Cell.BLACK){
+		if(player == Cell.BLACK) {
 			switch (board[y][x]){
 			case Cell.WHITE:
 				board[y][x] = Cell.WHITE_CAP;
@@ -362,7 +407,18 @@ public class Board {
 			default:
 				break;
 			}
-		}else if(player == Cell.WHITE){
+		} else if (player == Cell.WHITE){
+			switch (board[y][x]) {
+				case Cell.BLACK:
+					board[y][x] = Cell.BLACK_CAP;
+					break;
+				case Cell.EMPTY:
+					board[y][x] = Cell.CAP;
+					break;
+				default:
+					break;
+			}
+		} else if(player == Cell.WHITE) {
 			switch(board[y][x]){
 			case Cell.BLACK:
 				board[y][x] = Cell.BLACK_CAP;
@@ -380,8 +436,8 @@ public class Board {
 	public static boolean checkUniqueStates(Board a, Board b, GameMove m) {
 		byte[][] aBoard = a.getBoard();
 		byte[][] bBoard = b.getBoard();
-		int x = m.getLocation().x;
-		int y = m.getLocation().y;
+		int x = m.getX();
+		int y = m.getY();
 		if (aBoard[y][x] == Cell.BLACK && bBoard[y][x] == Cell.WHITE ||
 				aBoard[y][x] == Cell.WHITE && bBoard[y][x] == Cell.BLACK) {
 			//System.out.println("CONFLICTTT for move: x: "+m.getLocation().x + " - y: "+m.getLocation().y + " - p: "+m.getPlayer());
@@ -391,10 +447,10 @@ public class Board {
 	}
 
 	public boolean equals(Board other) {
-		byte[][] o = other.getBoard();
+		byte[][] ob = other.getBoard();
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
-				if (board[j][i] != o[j][i]) {
+				if (board[j][i] != ob[j][i]) {
 					return false;
 				}
 			}
@@ -405,20 +461,56 @@ public class Board {
 	/*
 	 * Transform comparison should be in buildTree
 	 * Takes two boards, compares most recent move of the first board to check for conflicts
-	 */
+	 */	
 	public Board transform(int i) {
 		switch (i) {
-		case 0:
-			return transformFlipVertical();
-		case 1:
-			return transformFlipHorizontal();
-		case 2:
-			return transformFlipMajorDiagonal();
-		case 3:
-			return transformFlipMinorDiagonal();
-		default:
-			return null;
+			case 0: //transform90CW
+				return transform90CW();
+			case 1:
+				return transform90CCW();
+			case 2:
+				return transform180();
+			case 3:
+				return transformFlipVertical();
+			case 4:
+				return transformFlipHorizontal();
+			case 5:
+				return transformFlipMajorDiagonal();
+			case 6:
+				return transformFlipMinorDiagonal();
+			default:
+				return null;
 		}		
+	}
+	
+	private Board transform90CW() {
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				tBoard.setCell(boardSize-j-1, i, board[j][i]);
+			}
+		}
+		return tBoard;
+	}
+
+	private Board transform90CCW() {
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				tBoard.setCell(j, boardSize-i-1, board[j][i]);
+			}
+		}
+		return tBoard;
+	}
+
+	private Board transform180() {
+		Board tBoard = new Board(boardSize);
+		for (int j = 0; j < boardSize; j++) {
+			for (int i = 0; i < boardSize; i++) {
+				tBoard.setCell(boardSize-i-1, boardSize-j-1, board[j][i]);
+			}
+		}
+		return tBoard;
 	}
 
 	private Board transformFlipVertical() {
@@ -465,8 +557,6 @@ public class Board {
 	/* TEST FUNCTION */
 
 	public void printBoard() {
-		//System.out.println("printing scoreboard");
-		//System.out.println("board size: "+boardSize);
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
 				System.out.print(board[j][i] + " ");

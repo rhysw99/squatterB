@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Tree<T> {
 	private Root<T> root;
 	
-	public Tree (T data, int playerID) {
+	public Tree (T data) {
 		root = new Root<T>(data);
 	}
 	

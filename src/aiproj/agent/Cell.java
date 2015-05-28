@@ -2,6 +2,7 @@ package aiproj.agent;
 
 public class Cell {
 	
+	public static int number = 6;
 	public static final int EMPTY     =  0,
 							WHITE     =  1, 
             				BLACK     =  2,
