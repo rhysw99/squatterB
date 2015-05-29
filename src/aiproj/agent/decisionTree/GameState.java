@@ -42,7 +42,7 @@ public class GameState {
 	}
 	
 	public void incrementCapture(int id) {
-		captures[id]++;
+ 		captures[id]++;
 	}
 	
 	public int[] getCaptures() {

@@ -209,7 +209,8 @@ public class Board {
 		boolean newPath = true;
 		while (!(pathStartX == endCell.x && pathStartY == endCell.y)) {
 			if (onBoard(pathStartX, pathStartY)) {
-				if (board[pathStartY][pathStartX] != move.getPlayer()) {
+				if (board[pathStartY][pathStartX] != move.getPlayer() &&
+						board[pathStartY][pathStartX] < Cell.BLACK_CAP) {
 					if (newPath) {
 						Point p = new Point(pathStartX, pathStartY);
 						if (!startingPaths.contains(p))
@@ -217,9 +218,9 @@ public class Board {
 						else
 							System.out.println("dup");
 						newPath = false;
-					} else {
-						newPath = true;
 					}
+				} else {
+					newPath = true;
 				}
 			}
 			offset = Miscellaneous.nextCell(offset);
@@ -243,13 +244,13 @@ public class Board {
 			ArrayList<Point> capturedCells = new ArrayList<Point>();
 			 if (!pathToEdge(p, gs, sb, explored, capturedCells, currentPlayer)) {
 				 //Captures made
-				 //System.out.println("Capture: x: "+p.x+" - y: "+p.y);
+				// System.out.println("Capture: x: "+p.x+" - y: "+p.y);
 				 //printBoard();
 				 Iterator<Point> i = capturedCells.iterator();
 				 while (i.hasNext()) {
 					 Point a = i.next();
 					 captureCell(move, a);
-					 gs.incrementCapture(currentPlayer);
+ 					 gs.incrementCapture(currentPlayer);
 					// System.out.println("\tExplored: x: "+a.x+" - y: "+a.y);
 				 }
 				 boardModified = true;

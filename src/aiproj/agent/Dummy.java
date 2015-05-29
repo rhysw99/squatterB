@@ -85,7 +85,7 @@ public class Dummy implements Player, Piece {
 			int x = (int) Math.round(Math.random()*mainBoard.getBoardSize());
 			int y = (int) Math.round(Math.random()*mainBoard.getBoardSize());
 			if (mainBoard.isLegal(x, y)) {
-				gm = new GameMove(playerID, x, y);				
+				gm = new GameMove(playerID, x, y);	
 			}
 		}
 		
