@@ -22,14 +22,31 @@ public class Scoring {
 			shortDiagWeight   = 3,
 			centerCellWeight  = 2,
 			centerCrossWeight = 1;
+
 		
 		byte[][] currentBoard = board.getBoard();
 
 		int score = 0;
 		int playerID = currentPlayer;	//only care when player makes move, not opponent
+		int opponentID = (playerID == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
+		int tmp = playerID;
+		playerID = opponentID;
+		opponentID = playerID;
 
 
 		// check if either player has scored since root, if they have no further analysis is needed
+		int currentPlayerCap = currentNode.getData().getCaptures()[playerID];
+		int rootPlayerCap = 0;
+		int currentOpponentCap = currentNode.getData().getCaptures()[opponentID];
+		int rootOpponentCap = 0;
+		
+		int currentCapDiff = currentPlayerCap - currentOpponentCap;
+		int rootCapDiff = 0;
+		
+		if(currentCapDiff != rootCapDiff) { // captures have been made, override
+			currentNode.getData().setScore(captureWeight*(currentCapDiff - rootCapDiff));
+			return;
+		}
 
 		//checks if most recent move was on a diagonal cell (cells a chess bishop could reach if it started at the center)
 		// these are the important cells for our game plan
@@ -47,7 +64,7 @@ public class Scoring {
 			transform	= 0,							// iterator through transforms types
 			checks		= 0;							// number of transformations to compare to shortDiag etc.
 
-		boolean topLeft = (x < 4)&&(y < 4);		// constrains offensive moves to the top left 5x5
+		boolean topLeft = (x < 4 )&& (y < 4);		// constrains offensive moves to the top left 5x5
 
 		byte P	 	= recentMove.getPlayer(),	// player id
 			 E		= Cell.EMPTY;				// empty  id		//TODO fix Piece reference, create own class
@@ -78,7 +95,7 @@ public class Scoring {
 				if(!compareMatch5x5(c, currentBoard, transform, playerID)) {match = false;}
 				if(!compareMatch5x5(d, currentBoard, transform, playerID)) {match = false;}
 
-				if(match){score += shortDiagWeight; System.out.println("shortMatch");}
+				if(match){score += shortDiagWeight; }// System.out.println("shortMatch");}
 			}// end for transform (0; ++; < checks)
 			
 			if(score <shortDiagWeight){currentNode.getData().setScore(score);	return;}	//if no short diags found end scoring
@@ -102,7 +119,7 @@ public class Scoring {
 							if(!compareMatch5x5(e, currentBoard, transform, playerID)) {match = false;}
 							if(!compareMatch5x5(f, currentBoard, transform, playerID)) {match = false;}
 
-							if(match){score += longDiagWeight; System.out.println("longMatch");}
+							if(match){score += longDiagWeight; }//System.out.println("longMatch");}
 						}// end for transform (0; ++ ; <checks)
 						
 						
@@ -126,7 +143,7 @@ public class Scoring {
 							if(!compareMatch5x5(e, currentBoard, transform, playerID)) {match = false;}
 							if(!compareMatch5x5(f, currentBoard, transform, playerID)) {match = false;}
 
-							if(match){score += lambdaWeight;System.out.println("lambdaMatch");}
+							if(match){score += lambdaWeight; System.out.println("lambdaMatch");}
 						}// end for transform 0 ++ <checks
 						
 						

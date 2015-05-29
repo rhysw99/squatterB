@@ -12,6 +12,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Stack;
 
 public class Board {	
 	protected byte[][] board;			//the game board
@@ -74,10 +75,10 @@ public class Board {
 	}
 
 	public boolean isLegal(GameMove move){
-		return isLegal(move.getX(), move.getY(), move.getPlayer());
+		return isLegal(move.getX(), move.getY());
 	}
 	
-	public boolean isLegal(int x, int y, int p) {
+	public boolean isLegal(int x, int y) {
 		if (!onBoard(x, y)) {
 			return false;
 		} else if (isOccupied(x, y)) {
@@ -116,6 +117,7 @@ public class Board {
 	public boolean onEdge(Point p) {
 		return onEdge(p.x, p.y);
 	}
+	
 	public boolean onEdge(int x, int y) {
 		if (x == 0 || y == 0 || x == boardSize-1 || y == boardSize-1) {
 			return true;						
@@ -209,7 +211,11 @@ public class Board {
 			if (onBoard(pathStartX, pathStartY)) {
 				if (board[pathStartY][pathStartX] != move.getPlayer()) {
 					if (newPath) {
-						startingPaths.add(new Point(pathStartX, pathStartY));
+						Point p = new Point(pathStartX, pathStartY);
+						if (!startingPaths.contains(p))
+							startingPaths.add(p);
+						else
+							System.out.println("dup");
 						newPath = false;
 					} else {
 						newPath = true;
@@ -224,14 +230,90 @@ public class Board {
 		// Loop through all our starting points and attempt to pathfind to
 		// edge from there
 		Iterator<Point> it = startingPaths.iterator();
+		//System.out.println("Move: x: "+move.getX() + " - y: "+move.getY()+ " - p: "+move.getPlayer());
+		//System.out.println("starting nodes: "+startingPaths.size());
+		boolean[][] explored = new boolean[boardSize][boardSize];
 		while(it.hasNext()) {
 			Point p = it.next();
-			 if (pathfind(p, gs, sb, currentPlayer)) {
+			//System.out.println("Start: x: "+p.x+" - y: "+p.y);
+			/*if (pathfind(p, gs, sb, currentPlayer)) {
+				boardModified = true;
+			}*/
+			
+			ArrayList<Point> capturedCells = new ArrayList<Point>();
+			 if (!pathToEdge(p, gs, sb, explored, capturedCells, currentPlayer)) {
 				 //Captures made
+				 //System.out.println("Capture: x: "+p.x+" - y: "+p.y);
+				 //printBoard();
+				 Iterator<Point> i = capturedCells.iterator();
+				 while (i.hasNext()) {
+					 Point a = i.next();
+					 captureCell(move, a);
+					 gs.incrementCapture(currentPlayer);
+					// System.out.println("\tExplored: x: "+a.x+" - y: "+a.y);
+				 }
 				 boardModified = true;
 			 }
 		}
 		return boardModified;
+	}
+	
+	private boolean pathToEdge(Point startPath, GameState gs, ScoreBoard scoreBoard, boolean[][] explored, ArrayList<Point> capturedCells, int currentPlayer) {
+		int x = startPath.x;
+		int y = startPath.y;
+		GameMove m = gs.getMove();
+		
+		if (onEdge(x, y)) {
+			return true;
+		}
+		
+		explored[startPath.y][startPath.x] = true;
+		capturedCells.add(startPath);
+		
+		byte[][] scoreMap = scoreBoard.getBoard();
+		
+		HashMap<Byte, ArrayList<Point>> next = new HashMap<Byte, ArrayList<Point>>();
+		for (byte i = 0; i <= scoreBoard.getMaxScore(); i++) {
+			next.put(i, new ArrayList<Point>());
+		}
+		
+		boolean foundPath = false;
+		
+		if (onBoard(x, y+1) && board[y+1][x] != m.getPlayer()) {
+			if (!explored[y+1][x])
+				next.get(scoreMap[y+1][x]).add(new Point(x, y+1));
+			else
+				foundPath = true;
+		}
+		if (onBoard(x, y-1) && board[y-1][x] != m.getPlayer()) {
+			if (!explored[y-1][x])
+				next.get(scoreMap[y-1][x]).add(new Point(x, y-1));
+			else
+				foundPath = true;
+		}
+		if (onBoard(x+1, y) && board[y][x+1] != m.getPlayer()) {
+			if (!explored[y][x+1])
+				next.get(scoreMap[y][x+1]).add(new Point(x+1, y));
+			else
+				foundPath = true;
+		}
+		if (onBoard(x-1, y) && board[y][x-1] != m.getPlayer()) {
+			if (!explored[y][x-1])
+				next.get(scoreMap[y][x-1]).add(new Point(x-1, y));
+			else
+				foundPath = true;
+		}
+		
+		for (byte i = (byte) scoreBoard.getMaxScore(); i >= 0; i--) {
+			if (!next.get(i).isEmpty()) {
+				Point p = next.get(i).remove(0);
+				if (pathToEdge(p, gs, scoreBoard, explored, capturedCells, currentPlayer)) {
+					return true;
+				}
+			}
+		}
+		
+		return foundPath;
 	}
 
 	private boolean pathfind(Point startPath, GameState gs, ScoreBoard sb, int currentPlayer) {
@@ -389,8 +471,7 @@ public class Board {
 					}
 				}
 		}
-
-
+		
 		// cells can be added to the captures
 		while(!exploredList.isEmpty()) {
 			int x = exploredList.get(0).x;
@@ -398,13 +479,14 @@ public class Board {
 
 			GameMove newCap = new GameMove(move.getPlayer(), x, y);
 
-			captureCell(newCap);
+			//captureCell(newCap);
 			captures = true;
 			
 			exploredList.remove(0);
+			
+			gs.incrementCapture(currentPlayer);
 
 			// was capture made by player? (not opponent)
-			gs.incrementCapture(move.getPlayer());
 			boolean playerCapture = (move.getPlayer() == currentPlayer);
 			//Node.setCaptureDifference(playerCapture);
 		}
@@ -412,10 +494,10 @@ public class Board {
 		return captures;
 	}
 
-	private void captureCell(GameMove capMove){
-		int y = (int)capMove.getY();
-		int x = (int)capMove.getX();
-		int player = capMove.getPlayer();
+	private void captureCell(GameMove move, Point cell){
+		int y = cell.y;
+		int x = cell.x;
+		int player = move.getPlayer();
 
 		if(player == Cell.BLACK) {
 			switch (board[y][x]){
@@ -440,17 +522,6 @@ public class Board {
 					break;
 				default:
 					break;
-			}
-		} else if(player == Cell.WHITE) {
-			switch(board[y][x]){
-			case Cell.BLACK:
-				board[y][x] = Cell.BLACK_CAP;
-				break;
-			case Cell.EMPTY:
-				board[y][x] = Cell.CAP;
-				break;
-			default:
-				break;
 			}
 		}
 		return;				

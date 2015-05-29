@@ -15,7 +15,6 @@ public class ScoreBoard extends Board {
 	private byte generateMetadata() {
 		// populates the score map
 		// TODO check the maths on this one
-		
 		byte maxValue, i, j;
 		float vertScore, horiScore;
 

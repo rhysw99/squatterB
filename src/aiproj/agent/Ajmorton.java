@@ -7,8 +7,12 @@ package aiproj.agent;
 // do we use alpha beta?
 // scoreMap for 6x6 is likely wrong
 
+import java.awt.Point;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -34,7 +38,7 @@ public class Ajmorton implements Player, Piece {
 	private Board mainBoard;
 	private ScoreBoard scoreBoard;
 	
-	private ArrayList<GameMove> moves;
+	private ProbabilityCell[] cellProbabilities;
 	
 	// done
 	public int init(int n, int p) {
@@ -52,13 +56,20 @@ public class Ajmorton implements Player, Piece {
 					+ "Program terminating!");
 			return FAILURE;
 		}
+		
+		System.out.println("Starting game as Ajmorton: "+p);
 
 		this.playerID = p;
 		this.opponentID = (p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
-
-		this.moves = new ArrayList<GameMove>();
+		
+		cellProbabilities = new ProbabilityCell[n*n];
+		for (int j = 0; j < n; j++) {
+			for (int i = 0; i < n; i++) {
+				cellProbabilities[j*n + i] = new ProbabilityCell(i, j);
+			}
+		}
 		
 		this.currentPlayer = Cell.WHITE;
 		
@@ -68,31 +79,26 @@ public class Ajmorton implements Player, Piece {
 	}
 
 	
-	public Move makeMove() {
-		GameMove gm;
-
-		Tree<GameState> decisionTree = buildTree();
-
-		Iterator<Node<GameState>> it = decisionTree.getRoot().getChildren().
-				iterator();
-		Node<GameState> best = null;
-
-		while (it.hasNext()) {
-			Node<GameState> n = it.next();
-			if (best == null ||
-					n.getData().getScore() > best.getData().getScore()) {
-				System.out.println("Node score: "+n.getData().getScore());
-				best = n;
-			}
-		}
+	public Move makeMove() {		
+		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
 		
-		gm = best.getData().getMove();
+		// We need to hold on to best node so we can pass the capture data along
+		Node<GameState> newRoot = DLSBuildAB(decisionTree, decisionTree.getRoot(), 
+				MAX_PLY, Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
+		// Can't set new root until we have made move
+		GameMove r = newRoot.getData().getMove();
+		
+		System.out.println("New root move - x: "+r.getX()+ " - y: "+r.getY()+ " - p: "+r.getPlayer());
+		
+		GameMove gm = newRoot.getData().getMove();
+		gm.setPlayer((byte) playerID);
 
-		makeMove(best.getData());
+		makeMove(newRoot.getData());
 
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
 														 Cell.WHITE);
+		
 		return GameMove.getMove(gm);
 	}
 	
@@ -113,8 +119,7 @@ public class Ajmorton implements Player, Piece {
 		
 		GameState gs = new GameState(null, gm);
 
-		mainBoard.setCell(gm);
-		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+		makeMove(gs);
 		
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
@@ -171,15 +176,19 @@ public class Ajmorton implements Player, Piece {
 		
 	}
 	
-	public int DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
+	public Node<GameState> DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
 			int maxDepth, Board pBoard, int a, int b) {
-		if (maxDepth <= 0 ||
+		if (maxDepth <= 0 || 
 				node.getData().getDepth() == mainBoard.getFreeSpaces()) {
+			//System.out.println("testing node: ");
 			pBoard.checkCaptures(node.getData(), scoreBoard, currentPlayer);
+			//pBoard.printBoard();
 			Scoring.scoreState(node, pBoard, currentPlayer);
 			pBoard = null;
-			System.out.println("SCore: "+node.getData().getScore());
-			return node.getData().getScore();
+			if (node.getData().getScore() > 0) {
+				//System.out.println("Score: "+node.getData().getScore());
+			}
+			return node;
 		}
 			
 		int p;		
@@ -190,9 +199,7 @@ public class Ajmorton implements Player, Piece {
 			p = playerID;
 		}
 		
-		boolean maximizingPlayer = (p == Cell.WHITE);
-		
-		TreeSet<Long> previousNodes = new TreeSet<Long>();
+		boolean maximizingPlayer = (p == playerID);
 		
 		/* Set board with all parent moves */
 		Node<GameState> parentNode = node;
@@ -207,13 +214,23 @@ public class Ajmorton implements Player, Piece {
 
 		Board tBoard = Board.copy(pBoard);
 		
-		int v = (maximizingPlayer) ? Integer.MIN_VALUE:Integer.MAX_VALUE;
+		GameState bestGS = new GameState(null, null);
+		Node<GameState> best = new Node<GameState>(bestGS, null);
+		if (maximizingPlayer)
+			best.getData().setScore(Integer.MIN_VALUE);
+		else
+			best.getData().setScore(Integer.MAX_VALUE);
 
-		for (int k = 0; k < pBoard.getBoardSpaces(); k++) {
-			int j = k / pBoard.getBoardSize();
-			int i = k - j*pBoard.getBoardSize();
-			if (pBoard.isLegal(i, j, p)) {
+		
+		for (int k = cellProbabilities.length-1; k >= 0; k--) {
+			int j = cellProbabilities[k].getY();
+			int i = cellProbabilities[k].getX();
+			//System.out.println("Max depth: "+maxDepth);
+			//System.out.println("@@@@@@@@");
+			//pBoard.printBoard();
+			if (pBoard.isLegal(i, j)) {
 				if (tBoard == null) {
+					//System.out.println("Cloning");
 					tBoard = Board.copy(pBoard);
 				}
 				tBoard.setCell(i, j, (byte) p);
@@ -223,36 +240,38 @@ public class Ajmorton implements Player, Piece {
 				Node<GameState> newNode = new Node<GameState>(gs, node);
 				newNode.getData().setDepth(node.getData().getDepth()+1);
 				boolean captures = tBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+				
+				//System.out.println("=========");
+				//tBoard.printBoard();
 			
 				/* alpha beta pruning */
 				if (maximizingPlayer) {
-					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
+					Node<GameState> child = DLSBuildAB(tree, newNode, maxDepth-1,
 							tBoard, a, b);
-					v = (newV > v) ? newV : v;
-					a = (a > v) ? a:v;
+					best = (child.getData().getScore() > best.getData().getScore())
+							? child : best;
+					a = (a > best.getData().getScore()) ? a:best.getData().getScore();
 					if (b <= a) {
+						//System.out.println("pruned - a: "+ a + " - b: "+b);
 						break;
 					}
 				} else {
-					int newV = DLSBuildAB(tree, newNode, maxDepth-1,
+					Node<GameState> child = DLSBuildAB(tree, newNode, maxDepth-1,
 							tBoard, a, b);
-					v = (newV < v) ? newV : v;
-					b = (b < v) ? b:v;
+					best = (child.getData().getScore() < best.getData().getScore()) ? child : best;
+					b = (b < best.getData().getScore()) ? b : best.getData().getScore();
 					if (b <= a) {
+						//System.out.println("pruned - a: "+ a + " - b: "+b);
 						break;
 					}
 				}
 				
 				if (captures) {
 					tBoard = null;
-				}
-				
-				//generateZobristKeys(previousNodes, tBoard);
-				
+				}				
 				if (newNode.getData().getDepth() == 1) {
 					tree.getRoot().getChildren().add(newNode);
 				}
-
 				if (tBoard != null) {
 					tBoard.resetCell(i, j, (byte) p);
 				}
@@ -270,17 +289,9 @@ public class Ajmorton implements Player, Piece {
 			parentNode = parentNode.getParent();
 		}
 		
-		node.getData().setScore(v);
+		node.getData().setScore(best.getData().getScore());
 		
-		return v;
-	}
-	
-	public Tree<GameState> buildTree() {
-		GameState gs = new GameState(null, null);
-		Tree<GameState> decisionTree = new Tree<GameState>(gs);
-		DLSBuildAB(decisionTree, decisionTree.getRoot(), MAX_PLY,
-				Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
-		return decisionTree;
+		return best;
 	}
 	
 	public void generateZobristKeys(TreeSet<Long> l, Board b) {
@@ -296,7 +307,37 @@ public class Ajmorton implements Player, Piece {
 	public void makeMove(GameState gs) {
 		mainBoard.setCell(gs.getMove());
 		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
-		//moves.add(m);
+		
+		GameMove m = gs.getMove();
+		int x = m.getX();
+		int y = m.getY();
+		int size = mainBoard.getBoardSize();
+		for (int j = -2; j <= 2; j++) {
+			for (int i = -2; i <= 2; i++) {
+				int nX = x + i;
+				int nY = y + j;
+				
+				if (nX < 0 || nY < 0 || nX >= size || nY >= size) {
+					continue;
+				}
+				
+				if (i == 0 && j == 0) {
+					cellProbabilities[nY*size + nX].setProbability(0);
+				} else if (i == 1 || j == 1) {
+					cellProbabilities[nY*size + nX].incrementProbability(15);
+				} else {
+					cellProbabilities[nY*size + nX].incrementProbability(5);
+				}
+			}
+		}
+		
+		Arrays.sort(cellProbabilities);
+		
+		/*for (int i = 0; i < cellProbabilities.length; i++) {
+			System.out.print(cellProbabilities[i].getProbability() + " ");
+		}*/
+		
+
 	}
 	
 	public Board getBoard() {

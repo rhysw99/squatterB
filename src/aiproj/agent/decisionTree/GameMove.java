@@ -21,6 +21,10 @@ public class GameMove {
 		return player;
 	}
 
+	public void setPlayer(byte player) {
+		this.player = player;
+	}
+	
 	public int getX() {
 		return x;
 	}
