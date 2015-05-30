@@ -4,7 +4,7 @@ import aiproj.agent.Cell;
 import aiproj.agent.board.Board;
 import aiproj.agent.decisionTree.Tree.Node;
 
-//TODO remove statics from methods
+//TODO remove from final product
 
 public class Scoring {
 	
@@ -16,33 +16,41 @@ public class Scoring {
 
 		// score weightings for different conditions, must be so that more 
 		// important weights are larger than any combination of all lesser weights
-		int captureWeight     = 650,				
+		int captureWeight     = 65000,				
 			lambdaWeight      = 130,
 			longDiagWeight    = 26,
 			shortDiagWeight   = 3,
 			centerCellWeight  = 2,
 			centerCrossWeight = 1;
+
 		
 		byte[][] currentBoard = board.getBoard();
 
 		int score = 0;
 		int playerID = currentPlayer;	//only care when player makes move, not opponent
-
-
+		int opponentID = (playerID == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
+		
 		// check if either player has scored since root, if they have no further analysis is needed
-		int currentPlayerCap = currentNode.getData().getCaptures()[*playerid index*];
-		int rootPlayerCap = rootNode.getData().getCaptures()[*playerid index*];
-		int currentOpponentCap = currentNode.getData().getCaptures()[*opponentid index*];
-		int rootOpponentCap = rootNode.getData().getCaptures()[*opponentid index*];
+		int currentPlayerCap = currentNode.getData().getCaptures()[playerID];
+		int rootPlayerCap = 0;
+		int currentOpponentCap = currentNode.getData().getCaptures()[opponentID];
+		int rootOpponentCap = 0;
 		
 		int currentCapDiff = currentPlayerCap - currentOpponentCap;
-		int rootCapDiff = rootPlayerCap - opponentPlayerCap;
+		int rootCapDiff = 0;
 		
-		if(currentCapDiff != rootCapDiff){ // captures have been made, override
-			return (captureWeight*(currentCapDiff - rootCapDiff));
+		if(currentCapDiff != 0) { // captures have been made, override
+			//System.out.println("currentPlayerCap: "+currentPlayerCap);
+			//System.out.println("currentPlayerCap: "+currentOpponentCap);
+			//board.printBoard();
+			currentNode.getData().setScore(captureWeight*(currentCapDiff - rootCapDiff));
+			//System.out.println("score: "+captureWeight*(currentCapDiff - rootCapDiff));
+			return;
 		}
-
-		int currentCapDiff = currentNode.getData().getCaptures()[1];
+		
+		if (true) {
+			currentNode.getData().setScore(1000);
+		}
 		
 		//checks if most recent move was on a diagonal cell (cells a chess bishop could reach if it started at the center)
 		// these are the important cells for our game plan
@@ -60,7 +68,7 @@ public class Scoring {
 			transform	= 0,							// iterator through transforms types
 			checks		= 0;							// number of transformations to compare to shortDiag etc.
 
-		boolean topLeft = (x < 4)&&(y < 4);		// constrains offensive moves to the top left 5x5
+		boolean topLeft = (x < 4 )&& (y < 4);		// constrains offensive moves to the top left 5x5
 
 		byte P	 	= recentMove.getPlayer(),	// player id
 			 E		= Cell.EMPTY;				// empty  id		//TODO fix Piece reference, create own class
@@ -80,8 +88,8 @@ public class Scoring {
 					 b = new GameMove(P, 1, 1),	//		0 0 E 0 0
 					 c = new GameMove(E, 3, 1),	//		0 P 0 E 0
 					 d = new GameMove(P, 2, 2);	//		0 0 P 0 0
-													//		0 0 0 0 0
-													//		0 0 0 0 0
+												//		0 0 0 0 0
+												//		0 0 0 0 0
 
 			checks = 8;		//check all rotations/mirrors
 			for(transform = 0; transform <checks; transform++){
@@ -150,6 +158,7 @@ public class Scoring {
 		}// end if onDiag
 
 		// no scorable pieces we care about
+		
 		currentNode.getData().setScore(score);	//score is 0
 		return;
 	}

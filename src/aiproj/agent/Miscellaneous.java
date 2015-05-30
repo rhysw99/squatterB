@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Random;
 
 //TODO rename from miscellaneous
+/**
+ * stores functions for searching adjecent cells on the board
+ */
 public class Miscellaneous {
 	
 	

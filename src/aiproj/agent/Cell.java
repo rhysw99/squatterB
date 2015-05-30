@@ -16,7 +16,6 @@ public class Cell {
             				BLACK_CAP =  4,		// id captured black cell
             				CAP       =  5;		// id uncaptured cell
 	
-	
 	/**
 	 * takes in the cell id's defined above and returns the respective
 	 * char characters for readability

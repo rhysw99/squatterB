@@ -24,11 +24,10 @@ public class GameMove {
 	public byte getPlayer() {return player;}
 	public int  getX() 		{return x;}
 	public int  getY() 		{return y;}
-	
-	
-	public static GameMove getGameMove(Move m) {
-		return new GameMove((byte) m.P, m.Col, m.Row);
-	}
+
+	/* SETTERS */
+	public void setPlayer(byte player) 			{this.player = player;}
+	public static GameMove getGameMove(Move m) 	{return new GameMove((byte) m.P, m.Col, m.Row);}
 	
 	public static Move getMove(GameMove gm) {
 		Move m = new Move();

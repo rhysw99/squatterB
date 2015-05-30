@@ -17,10 +17,10 @@ public class GameState {
 	/* CONSTRUCTORS */
 	public GameState(GameState parent, GameMove currentMove) {
 		this.move = currentMove;
+		this.captures = new int[3];
 		if (parent != null) {
-			this.captures = parent.getCaptures();
-		} else {
-			this.captures = new int[3];
+			int[] pCaptures = parent.getCaptures();
+			System.arraycopy(pCaptures, 0, this.captures, 0, pCaptures.length);
 		}
 	}
 

@@ -25,7 +25,6 @@ public class ScoreBoard extends Board {
 	private byte generateMetadata() {
 		// TODO cell scores for the even board should all be -1, 
 		//      but it still works as is
-		
 		byte maxValue, i, j;
 		float vertScore, horiScore;
 
