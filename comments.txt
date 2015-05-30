@@ -111,7 +111,7 @@ Operation of code
 		has exhausted all moves without reaching the edge of the board, then all explored 
 		cells are inside a loop and have been captured by the player who made the move.
 		
-		The algorithm uses A* to search for edges, where each cell is scored by it's manhattan
+		The algorithm uses Best-first to search for edges, where each cell is scored by it's manhattan
 		distance from the center of the board.
 		
 		6x6 Board cell scores						7x7 Board cell scores
@@ -124,7 +124,7 @@ Operation of code
 		4 4 4 4 4 4 									5 4 3 2 3 4 5
 		             									5 5 5 5 5 5 5
 		
-		A* then prioritizes which cell to move to next based on the highest score.
+		Best-first then prioritizes which cell to move to next based on the highest score.
 		
 	
 		The constraints on movement are that the algorithm cannot move into a cell that

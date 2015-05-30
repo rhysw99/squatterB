@@ -30,7 +30,20 @@ public class Scoring {
 
 
 		// check if either player has scored since root, if they have no further analysis is needed
+		int currentPlayerCap = currentNode.getData().getCaptures()[*playerid index*];
+		int rootPlayerCap = rootNode.getData().getCaptures()[*playerid index*];
+		int currentOpponentCap = currentNode.getData().getCaptures()[*opponentid index*];
+		int rootOpponentCap = rootNode.getData().getCaptures()[*opponentid index*];
+		
+		int currentCapDiff = currentPlayerCap - currentOpponentCap;
+		int rootCapDiff = rootPlayerCap - opponentPlayerCap;
+		
+		if(currentCapDiff != rootCapDiff){ // captures have been made, override
+			return (captureWeight*(currentCapDiff - rootCapDiff));
+		}
 
+		int currentCapDiff = currentNode.getData().getCaptures()[1];
+		
 		//checks if most recent move was on a diagonal cell (cells a chess bishop could reach if it started at the center)
 		// these are the important cells for our game plan
 		

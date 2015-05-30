@@ -5,12 +5,19 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Random;
 
+//TODO rename from miscellaneous
 public class Miscellaneous {
+	
 	
 	public static HashMap<Point, Point> next;
 	public static long[][] zobrist;
 	
+
 	public static void init(int boardSize) {
+		
+		// a hashtable that describes clockwise movement around (0,0)
+		// the current position passed into the table returns the next 
+		// clockwise position
 		next = new HashMap<Point, Point>(8);
 		next.put(new Point(-1, -1), new Point(0, -1));
 		next.put(new Point(0, -1), new Point(1, -1));
@@ -21,6 +28,10 @@ public class Miscellaneous {
 		next.put(new Point(-1, 1), new Point(-1, 0));
 		next.put(new Point(-1, 0), new Point(-1, -1));
 		
+		
+		
+		// creates a board of the same size as the gameBoard and populates 
+		// with random long values to use for zobrist hashing
 		zobrist = new long[boardSize*boardSize][Cell.number];
 		
 		for (int j = 0; j < boardSize; j++) {
@@ -32,6 +43,8 @@ public class Miscellaneous {
 		}
 	}
 	
+	// method that implements uses the "next" hashtable for clockwise 
+	// movement on the board
 	public static Point nextCell(Point offset) {
 		offset = next.get(offset);
 

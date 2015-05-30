@@ -2,13 +2,17 @@ package aiproj.agent;
 
 import java.awt.Point;
 
+/** 
+ * Data type that stores two Points
+ *
+ */
 public class PointPair {
 
 	private Point newCell;
 	private Point prevCell;
 	
 	
-	/* CONSTRUCTER */
+	/* CONSTRUCTOR */
 	public PointPair(Point newCell, Point prevCell){
 		this.newCell  = newCell;
 		this.prevCell = prevCell;
@@ -16,7 +20,6 @@ public class PointPair {
 	
 	
 	/* GETTERS */
-	
 	public Point getNewCell()	{return newCell;}
 	public Point getPrevCell()	{return prevCell;}
 	

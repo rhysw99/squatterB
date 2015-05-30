@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+/** 
+ * The board object that stores the current gamestate
+ */
 public class Board {	
 	protected byte[][] board;			//the game board
 
