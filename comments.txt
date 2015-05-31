@@ -1,0 +1,170 @@
+
+Operation of code
+	
+	
+	Structure of code:
+***		The agent builds a decision tree, exploring all possible future states to a depth of ***.
+		To minimise unnecessary nodes, nodes that are mirrors or rotations of existing nodes are not added to the tree.
+		The the leaf nodes are then scored and minimax is used to determine the best move to make. 
+		
+		
+	decision tree
+		minimax
+			scoring heuristic
+			called only on player moves
+			alpha-beta?
+	
+	
+	duplicate finding
+		To detect duplicate states in the tree, before a state is added to the tree it is compared
+		with all existing nodes at its depth. These comparisons are done by storing the existing 
+		nodes in a hash table to allow for O(1) comparison to all nodes at that depth.
+
+		These states can be removed because states in this game are path independent. No previous moves 
+		have an effect on the future moves in the game. 
+		
+		The rotations and mirrors are:
+
+		take the array
+
+		1 2 3		 	[y, x] == [y, x]	
+		4 5 6		 
+		7 8 9		
+		
+		it can be represented by reflections
+
+		vertical line	
+		3 2 1			[y, x] == [y, (n-1) - x]
+		6 5 4		 
+		9 8 7		
+		
+		horizontal line	
+		7 8 9			[y, x] == [(n-1) - y, x]
+		4 5 6		
+		1 2 3		
+
+		major diagonal \	
+		1 4 7			[y, x] == [x, y] 
+		2 5 8			
+		3 6 9			
+
+		minor diagonal /
+		9 6 3 			[y, x] == [(n-1) - x ,(n-1) - y]
+		8 5 2
+		7 4 1
+
+
+		and the rotations
+
+		90 degrees		
+		7 4 1			[y, x] == [x,(n-1) - y]
+		8 5 2			
+		9 6 3	
+
+		180 degrees
+		9 8 7			[y, x] == [(n-1) - y, (n-1) - x]
+		6 5 4		
+		3 2 1		
+		
+		270 degrees
+		3 6 9			[y, x] == [(n-1) - x, y]
+		2 5 8
+		1 4 7
+		
+	
+	
+		Because we know that the root node has cells that are common to all children we can analyse
+		the root to reduce the amount of unnecessary checks for duplicates among it's descendants. 
+		For example if the root node is:
+		
+		B + + W
+		+ + + +
+		+ + + +
+		+ + + +
+
+		we know that all children will have a black piece at (0,0) and a white piece at (0,3).
+		By analysing this board we can see that duplicate states will never be found among its 
+		children when mirroring across the vertical line as:
+		
+		mirror |
+		W + + B
+		+ + + +
+		+ + + +
+		+ + + +
+		
+		superimposed over the original board overlaps two different colour cells at (0,0) and (0,3).
+		This conflict means that no descendants will find a similar state when mirrored 
+		across the vertical axis
+	
+	
+	
+	
+	board update
+		The board update to find captured cells uses pathfinding to identify newly captured cells.
+		
+		By establishing rules that loops or sections of loops cannot be passed through, 
+		if a pathfind starts from a cell inside of a loop it cannot reach the edges of the board. 
+		Conversely if the pathfind starts from a cell not inside a loop the edges of the 
+		board can be reached.
+		
+		The pathfinding algorithm tracks all cells that it has explored. If the pathfind 
+		has exhausted all moves without reaching the edge of the board, then all explored 
+		cells are inside a loop and have been captured by the player who made the move.
+		
+		The algorithm uses Best-first to search for edges, where each cell is scored by it's manhattan
+		distance from the center of the board.
+		
+		6x6 Board cell scores						7x7 Board cell scores
+		
+		4 4 4 4 4 4 									5 5 5 5 5 5 5
+		4 3 2 2 3 4 									5 4 3 2 3 4 5
+		4 2 1 1 2 4 									5 3 2 1 2 3 5
+		4 2 1 1 2 4 									5 2 1 0 1 2 5
+		4 3 2 2 3 4 									5 3 2 1 2 3 5
+		4 4 4 4 4 4 									5 4 3 2 3 4 5
+		             									5 5 5 5 5 5 5
+		
+		Best-first then prioritizes which cell to move to next based on the highest score.
+		
+	
+		The constraints on movement are that the algorithm cannot move into a cell that
+		is owned by the player the capturing is tested for. Neither can it move to a diagonal cell
+		where both mutually cells adjacent to the current position and the next position 
+		are both owned for the player (this constitutes a diagonal section of a loop).
+		
+		Illegal diagonal pathfinding moves	
+		C = current position					G P G
+		G = goal position						P C P
+		P = player owned cells					G P G
+		
+		none of the G cells can be reached as both mutually adjacent cells are owned by the player
+		
+		
+		When a cell is placed, it needs to consider all possible positions to start pathfinding from, 
+		it's possible that multiple loops are created or that only one of the positions is inside a loop.
+		considering the new cell and it's adjacent cells, pathfinding must start from each contiguous section 
+		of non-player pieces, for example.
+		
+		N = newest cell
+		P = player owned cell
+		+ = non-player cell (captures, empty, capture player piece, any opponent piece)
+		
+		P + +
+		+ N +	two pathfinds must be performed, once in the top right section and once in the bottom left section
+		+ + P
+		
+		P + P
+		+ N +	four pathfinds must be performed, left right top and bottom
+		P + P
+		
+		in the first case only two pathfinds must be performed as all three cells in each respective 
+		section can be reached by each other performing a pathfind for each cell would be wasteful.
+		
+		
+		
+		
+		
+		
+		
+		
+	

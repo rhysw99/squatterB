@@ -1,11 +1,6 @@
 package aiproj.agent;
 
-// TODO
-// move Scoring to correct location (find where that is)
-// pathfind still needs to update capDifference, need to pass reference to
-// fill out comments.txt
-// do we use alpha beta?
-// scoreMap for 6x6 is likely wrong
+// TODO remove from the final product
 
 import java.awt.Point;
 import java.io.PrintStream;

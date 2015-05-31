@@ -27,44 +27,144 @@ import aiproj.agent.decisionTree.*;
 import aiproj.agent.decisionTree.Tree.*;
 import aiproj.squatter.*;
 
+/**
+ * The player AI
+ * interfaces with the referee to run the game
+ *
+ */
 public class Ajmorton implements Player, Piece {
 	
-	public static final int FAILURE = -1;
-	public static final int SUCCESS = 0;
-	public static final int MAX_PLY = 4;
+	public static final int FAILURE = -1;			// error code returned to referee after initialising
+	public static final int SUCCESS = 0;			// success code returned to referee after initialising
+	public static final int MAX_PLY = 4;			// the depth the decision tree can explore to 
 	
 	public static final boolean DEBUG = false;
 
-	private int playerID;
-	private int opponentID;
+	private int playerID;							// the id assigned to the player (black or white)
+	private int opponentID;							// the id assigned to the opponent
 	
-	private int currentPlayer;
+	private int currentPlayer;						// whose move it currently is
 	private int currentMove;
 	
-	private Board mainBoard;
-	private ScoreBoard scoreBoard;
+	private Board mainBoard;						// the board the pieces are placed on
+	private ScoreBoard scoreBoard;					// a scoremap of the board used for pathfinding
 	
 	private ProbabilityCell[] cellProbabilities;
 	private ProbabilityCell[] permanent;
 	
-	// done
-	public int init(int n, int p) {
-		/* This function is called by the referee to initialise the player.
-		 *  Return 0 for successful initialization and -1 for failed one.
-		 */
+	// TODO remove?
+	/*
+	public static void main(String[] args) {		
+		Ajmorton aj = new Ajmorton();
+		aj.init(6, 1);
+		aj.scoreBoard.printBoard();
 		
-		if (p != Cell.BLACK && p!= Cell.WHITE) {
+		aj.mainBoard.setCell(5, 6, (byte)Cell.BLACK);
+ 
+		
+
+		/*
+		 * 	1 2 1 2 1 2 
+			1 2 1 2 1 2 
+			1 2 1 2 1 2 
+			1 2 1 2 5 2 
+			1 2 1 2 5 2 
+			1 2 1 2 2 1 */
+		 
+		
+		
+		/*
+		Point placed = new Point(2,3);
+		
+		aj.mainBoard.updateBoard(new GameMove(Cell.BLACK, placed, Cell.WHITE));
+		
+		
+		aj.mainBoard.checkCaptures(new GameMove(Cell.BLACK, placed, Cell.WHITE), aj.scoreBoard);
+		
+		System.out.println("\n");
+		aj.printBoard(System.out);
+		
+		*/
+		
+		/*
+		// build a root and a node and a board size 6
+		GameMove recentMove = new GameMove(Cell.BLACK, new Point(3,3), Cell.BLACK);
+		GameState newGs = new GameState(null, recentMove);
+		Root<GameState> root = new Root<GameState>(newGs); 
+		Node<GameState> node = new Node<GameState>(newGs, root);
+		Board currentBoard = new Board(7);
+		*/
+		
+		/*
+		 * 0 0 0 0 0 0
+		 * 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0 
+		 * 0 0 0 0 0 0
+		 * 0 0 0 0 0 0
+		 
+		
+		//set Board
+		currentBoard.setCell(2, 2, (byte)Cell.BLACK);
+		currentBoard.setCell(3, 3, (byte)Cell.BLACK);
+		currentBoard.setCell(1, 1, (byte)Cell.BLACK);
+		currentBoard.setCell(3, 1, (byte)Cell.WHITE);
+
+		/*
+		 * 0 0 0 0 0 0
+		 * 0 2 0 1 0 0 
+		 * 0 0 2 0 0 0 
+		 * 0 0 0 2 0 0 
+		 * 0 0 0 0 0 0
+		 * 0 0 0 0 0 0
+		 */
+
+		// score the node
+		//Scoring.scoreState(node, root, currentBoard.getBoard());
+		
+		//System.out.println("boardScore is: " + node.getScore() + "\n");
+		
+		
+		
+		/*while (!aj.mainBoard.isFull()) {
+			//System.out.println("New cycle");
+			aj.makeMove();
+			GameMove gm = new GameMove(aj.currentPlayer, new Point(0,0));
+			while (!aj.mainBoard.isLegal(gm) && !aj.mainBoard.isFull()) {
+				int x = (int) Math.round(aj.mainBoard.getBoardSize()*Math.random());
+				int y = (int) Math.round(aj.mainBoard.getBoardSize()*Math.random());
+				gm = new GameMove(aj.currentPlayer, new Point(x,y));
+			}
+			aj.opponentMove(GameMove.getMove(gm));
+			
+			aj.mainBoard.printBoard();
+		}
+		
+		
+		
+	}
+	*/
+	
+	/** This function is called by the referee to initialise the player.
+	 *  Return 0 for successful initialization and -1 for failed one.
+	 */
+	public int init(int n, int p) {
+		
+		// is the id assigned to player valid?
+		if (p != Cell.BLACK && p != Cell.WHITE) {
 			System.err.println("Invalid player piece id ("+p+"). "
 					+ "Program terminating!");
 			return FAILURE;
 		}
+		
+		// is the board withing reasonable expectations?
 		if (n < 4 || n > 9) {
 			System.err.println("Invalid board size ("+n+").  "
 					+ "Program terminating!");
 			return FAILURE;
 		}
 		
-		System.out.println("Starting game as Ajmorton: "+p);
+		// System.out.println("Starting game as Ajmorton: "+p);
 
 		this.playerID = p;
 		this.opponentID = (p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
@@ -89,11 +189,16 @@ public class Ajmorton implements Player, Piece {
 		this.currentPlayer = Cell.WHITE;
 		
 		Misc.init(mainBoard.getBoardSize());
+		// create the main board
 		
 		return SUCCESS;
 	}
 
-	
+	/**
+	 * makes a move when requested by the referee
+	 * returns a Move object with the relevant information
+	 */
+	// TODO add comments on operation
 	public Move makeMove() {		
 		nodes = 0;
 		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
@@ -131,48 +236,53 @@ public class Ajmorton implements Player, Piece {
 		return GameMove.getMove(gm);
 	}
 	
-	//done 
+	/** 
+	 * Function called by referee to inform the player about the
+	 * opponent's move and update the gameboard accordingly.
+	 * Return -1 if the move is illegal otherwise return 0
+	 */
 	public int opponentMove(Move m) {
 		
-		/* Function called by referee to inform the player about the
-		 * opponent's move.
-		 *  Return -1 if the move is illegal otherwise return 0
-		 */
-		
+		// convert the object of type move to type GameMove for internal usage
 		GameMove gm = GameMove.getGameMove(m);
 		
+		// checks if the move is legally possible, if not return FAILURE
 		if(!mainBoard.isLegal(gm)) {
 			mainBoard.setCell(gm.getX(), gm.getY(), (byte) -1);
 			return FAILURE;
 		}
 		
+		// creates object containing pertinent information about the move
 		GameState gs = new GameState(null, gm);
 
+		// updates the board with this information
 		makeMove(gs);
 		
+		//updates the turn counter and whose turn it is
 		currentMove++;
 		currentPlayer = ((currentPlayer == Cell.WHITE) ? Cell.BLACK :
 														 Cell.WHITE);
 		return SUCCESS;
 	}
 	
-	//
+	/** This function when called by referee should return the winner
+	 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD
+	 *	respectively.
+	 */
 	public int getWinner() {
-	//TODO
-		/* This function when called by referee should return the winner
-		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD
-		 *	respectively.
-		 */
 		
+		//check if more moves can be made/ if the game is over
 		if (!mainBoard.isFull()) {
 			return Piece.EMPTY;
 		}
+		
 		int[] pieces = new int[6];
 		
 		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
 				int v = mainBoard.getValueAtPosition(i, j);
 					if (v < 0) {
+						//TODO is this possible to reach, setting a cell to invalid and continuing shouldn't happen?
 						return Piece.INVALID;
 					}
 				pieces[mainBoard.getValueAtPosition(i, j)]++;
@@ -191,7 +301,9 @@ public class Ajmorton implements Player, Piece {
 		}
 	}
 	
-	//
+	/**
+	 * prints the board state to the ouput, pieces are rpreresented by B,W,b,w,+ or -
+	 */
 	public void printBoard(PrintStream output) {
 	//TODO
 	// change from int output to char, build the Cell.interface alternative
@@ -207,6 +319,17 @@ public class Ajmorton implements Player, Piece {
 	
 	public int nodes = 0;
 	
+
+	/**
+	 * builds the decision tree for finding the next best move to make
+	 * @param tree		the decision tree
+	 * @param node		a node in the decision tree
+	 * @param maxDepth	the depth to expand the tree to
+	 * @param pBoard	the probability board decribing the best next cell to consider
+	 * @param a			
+	 * @param b
+	 * @returns the best move to make from the tree exploration
+	 */
 	public Node<GameState> DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
 			int maxDepth, Board pBoard, int a, int b) {
 		nodes++;
@@ -326,6 +449,11 @@ public class Ajmorton implements Player, Piece {
 		return best;
 	}
 	
+	/**
+	 * generates zobrist keys for the hashtable
+	 * @param l
+	 * @param b the board state to be hashed
+	 */
 	public void generateZobristKeys(TreeSet<Long> l, Board b) {
 		for (int i = 0 ; i < 7; i++) {
 			Board t = b.transform(i);
@@ -410,7 +538,12 @@ public class Ajmorton implements Player, Piece {
 		}
 	}
 	
+	/**
+	 * makes a move on the board and updates the probability board for next best cell to check
+	 * @param gs the relevant information to make the move
+	 */
 	public void makeMove(GameState gs) {
+		// makes the move and updates the board for captures
 		mainBoard.setCell(gs.getMove());
 		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
 		
@@ -438,6 +571,11 @@ public class Ajmorton implements Player, Piece {
 		}
 		
 		/*GameMove m = gs.getMove();
+=======
+		//Updates the cell utility scores (how likely they are to lead to a beneficial state)
+		// only changes local cells
+		GameMove m = gs.getMove();
+>>>>>>> branch 'master' of https://github.com/rhysw99/squatterB.git
 		int x = m.getX();
 		int y = m.getY();
 		int size = mainBoard.getBoardSize();
@@ -467,6 +605,7 @@ public class Ajmorton implements Player, Piece {
 			}
 		}
 		
+<<<<<<< HEAD
 		for(int i = 0; i < size; i++) {
 			for (int j = 0; j < size; j++) {
 				System.out.print(permanent[i*size + j].getProbability() + "   ");
@@ -481,16 +620,15 @@ public class Ajmorton implements Player, Piece {
 		/*for (int i = 0; i < cellProbabilities.length; i++) {
 			System.out.print(cellProbabilities[i].getProbability() + " ");
 		}*/
-		
 
 	}
 	
+	/**
+	 * returns the mainBoard
+	 * @return
+	 */
+	// TODO is this used?
 	public Board getBoard() {
 		return mainBoard;
 	}
-
-	public ScoreBoard getScoreBoard() {
-		return scoreBoard;
-	}
-	
 }

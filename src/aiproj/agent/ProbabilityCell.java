@@ -1,32 +1,30 @@
 package aiproj.agent;
 
+//TODO comment
+/**
+ * 
+ */
 public class ProbabilityCell implements Comparable {
 	
 	private float probability;
 	private int x;
 	private int y;
 	
+	/* CONSTRUCTOR */
 	public ProbabilityCell(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
-	
-	public int getX() {
-		return x;
-	}
-	
-	public int getY() {
-		return y;
-	}
-	
-	public float getProbability() {
-		return probability;
-	}
 
-	public void setProbability(float i) {
-		this.probability = i;	
-	}
+	/* GETTERS */
+	public int getX() 				{return x;}
+	public int getY() 				{return y;}
+	public float getProbability() 	{return probability;}
 	
+	/* SETTERS */
+	public void setProbability(float i) {this.probability = i;}
+	
+	/* METHODS */
 	public void incrementProbability(float i) {
 		this.probability += i;
 	}

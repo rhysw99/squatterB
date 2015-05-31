@@ -4,7 +4,7 @@ import aiproj.agent.Cell;
 import aiproj.agent.board.Board;
 import aiproj.agent.decisionTree.Tree.Node;
 
-//TODO remove statics from methods
+//TODO remove from final product
 
 public class Scoring {
 	
@@ -44,7 +44,6 @@ public class Scoring {
 		//board.printBoard();
 		currentNode.getData().setScore(captureWeight*(currentCapDiff - rootCapDiff));
 		//System.out.println("score: "+captureWeight*(currentCapDiff - rootCapDiff));
-
 		//checks if most recent move was on a diagonal cell (cells a chess bishop could reach if it started at the center)
 		// these are the important cells for our game plan
 		
@@ -83,8 +82,8 @@ public class Scoring {
 					 b = new GameMove(P, 1, 1),	//		0 0 E 0 0
 					 c = new GameMove(E, 3, 1),	//		0 P 0 E 0
 					 d = new GameMove(P, 2, 2);	//		0 0 P 0 0
-													//		0 0 0 0 0
-													//		0 0 0 0 0
+												//		0 0 0 0 0
+												//		0 0 0 0 0
 
 			checks = 8;		//check all rotations/mirrors
 			for(transform = 0; transform <checks; transform++){
