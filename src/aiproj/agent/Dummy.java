@@ -73,7 +73,7 @@ public class Dummy implements Player, Piece {
 		
 		this.currentPlayer = Cell.WHITE;
 		
-		Miscellaneous.init(mainBoard.getBoardSize());
+		Misc.init(mainBoard.getBoardSize());
 		
 		return SUCCESS;
 	}

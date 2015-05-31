@@ -33,6 +33,9 @@ public class ScoreBoard extends Board {
 					horiScore = Math.abs((float)(boardSize - 1)/2 - j);
 					board[i][j] = (byte)(vertScore + horiScore); 
 				}
+				if (board[i][j] <= 0) {
+					board[i][j] = 1;
+				}
 			}
 		}
 		return maxValue;

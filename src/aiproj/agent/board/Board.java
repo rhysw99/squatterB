@@ -2,7 +2,7 @@ package aiproj.agent.board;
 
 
 import aiproj.agent.Cell;
-import aiproj.agent.Miscellaneous;
+import aiproj.agent.Misc;
 import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
 import aiproj.agent.decisionTree.GameState;
@@ -89,7 +89,11 @@ public class Board {
 	}
 	
 	public byte getValueAtPosition(int x, int y) {
-		return board[y][x];
+		if (onBoard(x, y)) {
+			return board[y][x];
+		} else {
+			return -1;
+		}
 	}
 
 	public boolean onBoard(Point p) {
@@ -153,7 +157,7 @@ public class Board {
 		for (int j = 0; j < boardSize; j++) {
 			for (int i = 0; i < boardSize; i++) {
 				if (board[j][i] != Cell.EMPTY) {
-					key ^= Miscellaneous.zobrist[j*boardSize+i][board[j][i]];
+					key ^= Misc.zobrist[j*boardSize+i][board[j][i]];
 				}
 			}
 		}
@@ -161,7 +165,7 @@ public class Board {
 	}
 	
 	public long updateKey(long oldKey, int i, int j, int p) {
-		return oldKey ^ Miscellaneous.zobrist[j*boardSize + i][p];
+		return oldKey ^ Misc.zobrist[j*boardSize + i][p];
 	}
 
 	public boolean checkCaptures(GameState gs, ScoreBoard sb, int currentPlayer) {
@@ -190,7 +194,7 @@ public class Board {
 		// find first pathStart
 		while (!onBoard(pathStartX, pathStartY) ||
 				board[pathStartY][pathStartX] != move.getPlayer()) {
-			offset = Miscellaneous.nextCell(offset);
+			offset = Misc.nextCell(offset);
 			pathStartX = centerCellX + offset.x;
 			pathStartY = centerCellY + offset.y;
 			// We have cycled around with with no possible points to start
@@ -202,7 +206,7 @@ public class Board {
 		
 		// We have found a piece surrounding the move that matches!
 		endCell.setLocation(pathStartX, pathStartY);
-		offset = Miscellaneous.nextCell(offset);
+		offset = Misc.nextCell(offset);
 		pathStartX = centerCellX + offset.x;
 		pathStartY = centerCellY + offset.y;
 
@@ -213,17 +217,14 @@ public class Board {
 						board[pathStartY][pathStartX] < Cell.BLACK_CAP) {
 					if (newPath) {
 						Point p = new Point(pathStartX, pathStartY);
-						if (!startingPaths.contains(p))
-							startingPaths.add(p);
-						else
-							System.out.println("dup");
+						startingPaths.add(p);
 						newPath = false;
 					}
 				} else {
 					newPath = true;
 				}
 			}
-			offset = Miscellaneous.nextCell(offset);
+			offset = Misc.nextCell(offset);
 			pathStartX = centerCellX + offset.x;
 			pathStartY = centerCellY + offset.y;
 		}
@@ -233,13 +234,14 @@ public class Board {
 		Iterator<Point> it = startingPaths.iterator();
 		//System.out.println("Move: x: "+move.getX() + " - y: "+move.getY()+ " - p: "+move.getPlayer());
 		//System.out.println("starting nodes: "+startingPaths.size());
-		boolean[][] explored = new boolean[boardSize][boardSize];
 		while(it.hasNext()) {
 			Point p = it.next();
 			//System.out.println("Start: x: "+p.x+" - y: "+p.y);
 			/*if (pathfind(p, gs, sb, currentPlayer)) {
 				boardModified = true;
 			}*/
+			
+			boolean[][] explored = new boolean[boardSize][boardSize];
 			
 			ArrayList<Point> capturedCells = new ArrayList<Point>();
 			 if (!pathToEdge(p, gs, sb, explored, capturedCells, currentPlayer)) {
@@ -267,9 +269,6 @@ public class Board {
 		if (onEdge(x, y)) {
 			return true;
 		}
-		
-		explored[startPath.y][startPath.x] = true;
-		capturedCells.add(startPath);
 		
 		byte[][] scoreMap = scoreBoard.getBoard();
 		
@@ -305,6 +304,9 @@ public class Board {
 				foundPath = true;
 		}
 		
+		explored[startPath.y][startPath.x] = true;
+		capturedCells.add(startPath);
+		
 		for (byte i = (byte) scoreBoard.getMaxScore(); i >= 0; i--) {
 			if (!next.get(i).isEmpty()) {
 				Point p = next.get(i).remove(0);
@@ -314,7 +316,7 @@ public class Board {
 			}
 		}
 		
-		return foundPath;
+		return false;
 	}
 
 	private boolean pathfind(Point startPath, GameState gs, ScoreBoard sb, int currentPlayer) {

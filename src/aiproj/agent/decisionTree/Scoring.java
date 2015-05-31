@@ -39,22 +39,17 @@ public class Scoring {
 		int currentCapDiff = currentPlayerCap - currentOpponentCap;
 		int rootCapDiff = 0;
 		
-		if(currentCapDiff != 0) { // captures have been made, override
-			//System.out.println("currentPlayerCap: "+currentPlayerCap);
-			//System.out.println("currentPlayerCap: "+currentOpponentCap);
-			//board.printBoard();
-			currentNode.getData().setScore(captureWeight*(currentCapDiff - rootCapDiff));
-			//System.out.println("score: "+captureWeight*(currentCapDiff - rootCapDiff));
-			return;
-		}
-		
-		if (true) {
-			currentNode.getData().setScore(1000);
-		}
+		//System.out.println("currentPlayerCap: "+currentPlayerCap);
+		//System.out.println("currentPlayerCap: "+currentOpponentCap);
+		//board.printBoard();
+		currentNode.getData().setScore(captureWeight*(currentCapDiff - rootCapDiff));
+		//System.out.println("score: "+captureWeight*(currentCapDiff - rootCapDiff));
 
 		//checks if most recent move was on a diagonal cell (cells a chess bishop could reach if it started at the center)
 		// these are the important cells for our game plan
 		
+		
+		/*
 		int mostRecentMoveX = currentNode.getData().getMove().getX();
 		int mostRecentMoveY = currentNode.getData().getMove().getY();
 		
@@ -160,7 +155,7 @@ public class Scoring {
 		// no scorable pieces we care about
 		
 		currentNode.getData().setScore(score);	//score is 0
-		return;
+		return;*/
 	}
 	
 	public static boolean compareMatch5x5(GameMove move, byte[][] board, int transformType, int playerID){

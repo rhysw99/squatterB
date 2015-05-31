@@ -12,9 +12,15 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import aiproj.agent.board.*;
 import aiproj.agent.decisionTree.*;
@@ -39,6 +45,7 @@ public class Ajmorton implements Player, Piece {
 	private ScoreBoard scoreBoard;
 	
 	private ProbabilityCell[] cellProbabilities;
+	private ProbabilityCell[] permanent;
 	
 	// done
 	public int init(int n, int p) {
@@ -64,22 +71,31 @@ public class Ajmorton implements Player, Piece {
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
 		
-		cellProbabilities = new ProbabilityCell[n*n];
+		this.cellProbabilities = new ProbabilityCell[n*n];
+		
+		this.permanent = new ProbabilityCell[n*n];
 		for (int j = 0; j < n; j++) {
 			for (int i = 0; i < n; i++) {
-				cellProbabilities[j*n + i] = new ProbabilityCell(i, j);
+				permanent[j*n + i] = new ProbabilityCell(i, j);
 			}
 		}
 		
+		permanent[n*n/2].setProbability(5);
+		
+		System.arraycopy(permanent, 0, cellProbabilities, 0, permanent.length);
+		
+		Arrays.sort(cellProbabilities);
+		
 		this.currentPlayer = Cell.WHITE;
 		
-		Miscellaneous.init(mainBoard.getBoardSize());
+		Misc.init(mainBoard.getBoardSize());
 		
 		return SUCCESS;
 	}
 
 	
 	public Move makeMove() {		
+		nodes = 0;
 		Tree<GameState> decisionTree = new Tree<GameState>(new GameState(null, null));
 		
 		// We need to hold on to best node so we can pass the capture data along
@@ -87,7 +103,9 @@ public class Ajmorton implements Player, Piece {
 				MAX_PLY, Board.copy(mainBoard), Integer.MIN_VALUE, Integer.MAX_VALUE);
 		// Can't set new root until we have made move
 		
-		Node<GameState> best = null;		
+		Node<GameState> best = null;
+		
+		System.out.println("nodes: "+nodes);
 		
 		ArrayList<Node<GameState>> i = decisionTree.getRoot().getChildren();
 		for (Node<GameState> n : i) {
@@ -187,8 +205,12 @@ public class Ajmorton implements Player, Piece {
 		
 	}
 	
+	public int nodes = 0;
+	
 	public Node<GameState> DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
 			int maxDepth, Board pBoard, int a, int b) {
+		nodes++;
+		
 		if (maxDepth <= 0 || 
 				node.getData().getDepth() == mainBoard.getFreeSpaces()) {
 			//System.out.println("testing node: ");
@@ -314,16 +336,113 @@ public class Ajmorton implements Player, Piece {
 		}
 	}
 	
+	public void updateProbabilities(Point p, float weight, int player, Point offset, int pieces, ArrayList<Point> explored) {
+		int x = p.x;
+		int y = p.y;
+		int size = mainBoard.getBoardSize();
+		
+		boolean ourMove = (player == playerID) ? true : false;
+		
+		float multiplier = (ourMove) ? 1.0f:0.9f;
+		
+		System.out.println("Point: "+p.x+","+p.y+" - weight: "+weight);
+		
+		HashMap<Point, Float> next = new HashMap<Point, Float>();
+			
+		for (int j = -1; j <= 1; j++) {
+			for (int i = -1; i <= 1; i++) {
+				int nX = x+i;
+				int nY = y+j;
+				if (i == 0 && j == 0) {
+					continue;
+				} else if (Math.abs(i) == 1 && Math.abs(j) == 1) { // Diagonals
+					if (mainBoard.getValueAtPosition(nX, nY) == player) { // Two Diagonal
+						if (mainBoard.getValueAtPosition(nX+i, nX+i) == player) { // Three diagonals in row!!!
+							updateProbability(nX-i, nY+j, 40*multiplier);
+							updateProbability(nX+i, nY-j, 40*multiplier);
+						} else {
+							updateProbability(nX+i, nY+j, 20*multiplier);
+						}
+					} else { //Only cell
+						updateProbability(x+i, y+j, 5*multiplier);
+					}
+				} else {
+					updateProbability(x+i, y+j, 3*multiplier);		
+				}
+			}
+		}
+		
+		/*if (next.size() <= 0 || mainBoard.getValueAtPosition(x, y) != player) {
+			for (int j = -1; j <= 1; j++) {
+				for (int i = -1; i <= 1; i++) {
+					if (i == 0 && j == 0) {
+						continue;
+					}
+					int nX = x+i;
+					int nY = y+i;
+					if (mainBoard.getValueAtPosition(nX, nY) == Cell.EMPTY) {
+						permanent[nY*size + nX].setProbability(weight);
+					}
+				}
+			}
+			return;
+		}
+		*/
+		explored.add(p);
+		
+		LinkedHashMap<Point, Float> sorted = (LinkedHashMap<Point, Float>) Misc.sortByValue(next);
+		ListIterator<Map.Entry<Point, Float>> iterator = new ArrayList<Map.Entry<Point, Float>>(sorted.entrySet()).listIterator(sorted.size());
+		while (iterator.hasPrevious()) {
+			Map.Entry<Point, Float> entry = iterator.previous();
+			Point a = entry.getKey();
+			float v = entry.getValue();
+			if (!explored.contains(a)) {
+				Point o = new Point(a.x - x, a.y - y);
+				updateProbabilities(a, v, player, o, pieces+1, explored);
+			}
+		}
+	}
+	
+	public void updateProbability(int x, int y, float value) {
+		if (mainBoard.onBoard(x,y) && mainBoard.getValueAtPosition(x, y) == Cell.EMPTY) {
+			int size = mainBoard.getBoardSize();
+			permanent[y*size + x].incrementProbability(value);
+		}
+	}
+	
 	public void makeMove(GameState gs) {
 		mainBoard.setCell(gs.getMove());
 		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
 		
-		GameMove m = gs.getMove();
+		permanent[gs.getMove().getY()*mainBoard.getBoardSize() + gs.getMove().getX()].setProbability(0);
+		
+		ArrayList<Point> explored = new ArrayList<Point>();
+		
+		updateProbabilities(new Point(gs.getMove().getX(), gs.getMove().getY()), 5, gs.getMove().getPlayer(), new Point(0, 0), 0, explored);
+		
+		System.arraycopy(permanent, 0, cellProbabilities, 0, permanent.length);
+		
+		Arrays.sort(cellProbabilities);
+		
+		int size = mainBoard.getBoardSize();
+		
+		for(int j = 0; j < size; j++) {
+			for (int i = 0; i < size; i++) {
+				if (permanent[j*size + i].getProbability() <= 0.0) {
+					System.out.print(Cell.toChar(mainBoard.getValueAtPosition(i, j)) + "\t");
+				} else {
+					System.out.print(permanent[j*size + i].getProbability() + "\t");
+				}
+			}
+			System.out.println();
+		}
+		
+		/*GameMove m = gs.getMove();
 		int x = m.getX();
 		int y = m.getY();
 		int size = mainBoard.getBoardSize();
-		for (int j = -2; j <= 2; j++) {
-			for (int i = -2; i <= 2; i++) {
+		for (int j = -1; j <= 1; j++) {
+			for (int i = -1; i <= 1; i++) {
 				int nX = x + i;
 				int nY = y + j;
 				
@@ -331,17 +450,33 @@ public class Ajmorton implements Player, Piece {
 					continue;
 				}
 				
+				if (mainBoard.isOccupied(nX, nY)) {
+					continue;
+				}
+				float multiplier = 1.0f;
+				if (mainBoard.getValueAtPosition(x, y) == opponentID) {
+					multiplier = 1.0f;
+				}
 				if (i == 0 && j == 0) {
-					cellProbabilities[nY*size + nX].setProbability(0);
-				} else if (i == 1 || j == 1) {
-					cellProbabilities[nY*size + nX].incrementProbability(15);
-				} else {
-					cellProbabilities[nY*size + nX].incrementProbability(5);
+					permanent[nY*size + nX].setProbability(0);
+				} else if (Math.abs(i) == 1 && Math.abs(j) == 1) {
+					permanent[nY*size + nX].incrementProbability(20*multiplier);
+				} else if (Math.abs(i) == 1 || Math.abs(j) == 1){
+					permanent[nY*size + nX].incrementProbability(5*multiplier);
 				}
 			}
 		}
 		
-		Arrays.sort(cellProbabilities);
+		for(int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				System.out.print(permanent[i*size + j].getProbability() + "   ");
+			}
+			System.out.println();
+		}
+		
+		System.arraycopy(permanent, 0, cellProbabilities, 0, permanent.length);
+		
+		Arrays.sort(cellProbabilities);*/
 		
 		/*for (int i = 0; i < cellProbabilities.length; i++) {
 			System.out.print(cellProbabilities[i].getProbability() + " ");
