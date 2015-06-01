@@ -1,6 +1,5 @@
 package aiproj.agent.decisionTree;
 
-import aiproj.agent.board.Board;
 
 /** 
  * contains metadata about the current node in the decision tree it is stored in

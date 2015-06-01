@@ -41,8 +41,6 @@ public class Referee implements Piece{
 		
 		while(boardEmptyPieces > 0 && P1.getWinner() == 0 && P2.getWinner() ==0)
 		{
-			
-			System.out.println("Moves: "+NumberofMoves);
 			NumberofMoves++;
 			lastPlayedMove=P1.makeMove();
 			System.out.println("Placing to. "+lastPlayedMove.Row+":"+lastPlayedMove.Col+" by "+lastPlayedMove.P);		

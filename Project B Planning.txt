@@ -1,4 +1,4 @@
-Minimax leads to not losing, doesn’t lead to winning
+Minimax leads to not losing, doesnâ€™t lead to winning
 
 Unavoidable captures
 	- can states be established where opponent cannot prevent a capture?
@@ -18,12 +18,12 @@ Minimising the decision tree
 		alpha beta reduces information in the system, may miss optimal path due to
 		local minimums
 	
-		Local minimums —> a move allows for the opponent to score in order to set
+		Local minimums â€”> a move allows for the opponent to score in order to set
 				  up a larger player score. Is this likely/possible?
 
 	- can opponents moves be predicted? if so a depth first component can be added to
 	  future decision prediction. Additionally, knowing how deep the opponent predicts
-	  may allow for “riskier” moves. 
+	  may allow for â€œriskierâ€� moves. 
 	  i.e. moving down a node with a lower minimax score, but being able to prevent
 	  the opponent from choosing that worst case path
 
@@ -61,9 +61,9 @@ node class contents v2
 
 
 Node Size
-	- 2D array of objects	—> n^2 * sizeof({cell object})
-	- tree level		—> sizeof(int)
-	- black/white arrays	—> sizeof(blackArray) + sizeof(whiteArray)
+	- 2D array of objects	â€”> n^2 * sizeof({cell object})
+	- tree level		â€”> sizeof(int)
+	- black/white arrays	â€”> sizeof(blackArray) + sizeof(whiteArray)
 	  			   varies w/ tree depth - need more info on sizeof in java
 	- pointers to child nodes
 				pointers will be smaller than black/white arrays, likely
@@ -89,7 +89,7 @@ Program constraints
 		Regardless, a prediction for the time taken to populate each tree level
 		will be required.
 
-		Does program pause when it’s not the player turn? could set decision tree
+		Does program pause when itâ€™s not the player turn? could set decision tree
 		population to operate during the opponents turn as well
 
 		Save time with cumulative forward prediction, see below
@@ -450,7 +450,7 @@ establish a list of cells to begin a path finding search from, in this case all 
 labeled S, they will be rows -1 and n, and columns -1 and n.
 
 use pathfinding for each player, where if searching for black captures then the search
-path can’t cross a boundary that is block by Black pieces. for example in the below situation 
+path canâ€™t cross a boundary that is block by Black pieces. for example in the below situation 
 the path finding cannot move left (blocked by a black captured cell), up (same) or diagonally 
 up and left (as the are black cells adjacent to both the reference cell and the possible 
 next cell).
@@ -462,7 +462,7 @@ B C -
 
 This, when finished will mean that the only cells not accessed by the path finding algorithm 
 are those that are in a captured loop. Iterating though this to update to captured cells 
-(provided they aren’t the player own cells) will be a relatively simple way to update the 
+(provided they arenâ€™t the player own cells) will be a relatively simple way to update the 
 board correctly
 
 
@@ -506,7 +506,7 @@ adjacent paths
 	It is possible that two paths merge later on ie.
 
 	- - - - - - -
-	- - - — - - -
+	- - - â€” - - -
 	- B - B - B -
 	- B - S B B -
 	- B - - - B -
@@ -571,22 +571,18 @@ captures in time for the board to end. The decision tree calculates down to leve
  ***  ***  ***  ***  ***   ***            (size)             ***  ***  ***  ***  *** ***
   ******    ******    **********************************************     ******    ******
 
-################################
-1000 bytes per kilobyte?
-################################
-
 size allocated: given at start of game	maybe hardcoded
 time allocated:	given at start of game	maybe hardcoded
 
 node size:	size = (no. pieces placed) + base size
 		
-		base size is the board, as it’s size shouldn’t change
+		base size is the board, as itâ€™s size shouldnâ€™t change
 		no.pieces placed can be updated on every call from the game manager
 
 
 Number of Nodes between each level:
 
-root node is number n^2 <— refers to number of branches from node
+root node is number n^2 <â€” refers to number of branches from node
 each level below decrements by one, unless a capture is made, then the level is decremented by 1 + no. captures
 
 level is equivalent to number of free spaces left on board.
@@ -596,7 +592,7 @@ number of nodes between Start level and end level
 
 			(SL!/EL!)/(((SL-EL)/2)! * (SL - (SL-EL)/2)!), 
 
-note, doesn’t account for reflect/rotation reduction
+note, doesnâ€™t account for reflect/rotation reduction
 
 
 average size of nodes between start level and end level
@@ -607,13 +603,6 @@ average size of nodes between start level and end level
 
 product of these is the size in memory for all nodes between SL and EL, the problem is that sizeof(L) is not directly related to EL or SL. It is proportional to number of pieces placed on the board, while SL/EL are dependent on the number of free spaces on the board.
 The difference between these is the number of captured cells.
-
-
-
-
-
-
-
 
 
 
@@ -633,18 +622,13 @@ if write speed of server is significant (>100MB per second for SSD) then timing 
 Clock speed of servers?
 
 
-follow average case —> risky
-follow worst case   —> likely inefficient
-follow best case    —> guaranteed timeouts  
+follow average case â€”> risky
+follow worst case   â€”> likely inefficient
+follow best case    â€”> guaranteed timeouts  
 
 
 worst case
 		no. cycles < L!*(no.pieces)*timeCaptureFind
-
-
-
-
-
 
 
 
@@ -665,7 +649,6 @@ Major problems
 
 Questions for Lida
 
-	- previous year results —> minimax will tend towards (0,0) draws
 	- reference sizing
 	
 	- Server clock speed

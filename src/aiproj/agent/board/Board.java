@@ -3,7 +3,6 @@ package aiproj.agent.board;
 
 import aiproj.agent.Cell;
 import aiproj.agent.Misc;
-import aiproj.agent.PointPair;
 import aiproj.agent.decisionTree.GameMove;
 import aiproj.agent.decisionTree.GameState;
 import aiproj.squatter.Piece;
@@ -12,7 +11,6 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Stack;
 
 /** 
  * The board object that stores the current gamestate
@@ -21,6 +19,8 @@ public class Board {
 	protected byte[][] board;			//the game board
 
 	protected int boardSize;
+	
+	private byte[] captures = new byte[3];
 	/* CONSTRUCTORS */
 	public Board(int boardSize){
 		this(new byte[boardSize][boardSize], boardSize);
@@ -167,7 +167,7 @@ public class Board {
 	}
 
 	// check if the most recent move has captured any cells on the board
-	public boolean checkCaptures(GameState gs, ScoreBoard sb, int currentPlayer) {
+	public boolean checkCaptures(GameState gs, ScoreBoard sb, int currentPlayer, boolean actualMove) {
 		/* Find the point adjacent from the move made which is closest
 		 * to a corner of the board.
 		 */
@@ -233,10 +233,10 @@ public class Board {
 		// edge from there
 		Iterator<Point> it = startingPaths.iterator();
 		
-		boolean[][] explored = new boolean[boardSize][boardSize];
 		while(it.hasNext()) {
 			Point p = it.next();
 			
+			boolean[][] explored = new boolean[boardSize][boardSize];
 			ArrayList<Point> capturedCells = new ArrayList<Point>();
 			 if (!pathToEdge(p, gs, sb, explored, capturedCells, currentPlayer)) {
 				 //Captures made
@@ -246,7 +246,9 @@ public class Board {
 					 Point a = i.next();
 					 captureCell(move, a);
  					 gs.incrementCapture(currentPlayer);
-					// System.out.println("\tExplored: x: "+a.x+" - y: "+a.y);
+ 					 if (actualMove) {
+ 						 captures[currentPlayer]++;
+ 					 }
 				 }
 				 boardModified = true;
 			 }
@@ -260,7 +262,14 @@ public class Board {
 		int y = startPath.y;
 		GameMove m = gs.getMove();
 		
+		if (x == 3 && y == 3) {
+			//System.out.println("MIDDLE");
+		} else {
+			//System.out.println("Exploring: p.x: "+startPath.x+" - p.y: "+startPath.y);
+		}
+		
 		if (onEdge(x, y)) {
+			//System.out.println("=========");
 			return true;
 		}
 		
@@ -271,31 +280,21 @@ public class Board {
 			next.put(i, new ArrayList<Point>());
 		}
 		
-		boolean foundPath = false;
-		
 		if (onBoard(x, y+1) && board[y+1][x] != m.getPlayer()) {
 			if (!explored[y+1][x])
 				next.get(scoreMap[y+1][x]).add(new Point(x, y+1));
-			else
-				foundPath = true;
 		}
 		if (onBoard(x, y-1) && board[y-1][x] != m.getPlayer()) {
 			if (!explored[y-1][x])
 				next.get(scoreMap[y-1][x]).add(new Point(x, y-1));
-			else
-				foundPath = true;
 		}
 		if (onBoard(x+1, y) && board[y][x+1] != m.getPlayer()) {
 			if (!explored[y][x+1])
 				next.get(scoreMap[y][x+1]).add(new Point(x+1, y));
-			else
-				foundPath = true;
 		}
 		if (onBoard(x-1, y) && board[y][x-1] != m.getPlayer()) {
 			if (!explored[y][x-1])
 				next.get(scoreMap[y][x-1]).add(new Point(x-1, y));
-			else
-				foundPath = true;
 		}
 		
 		explored[startPath.y][startPath.x] = true;
@@ -309,194 +308,15 @@ public class Board {
 				}
 			}
 		}
-		
+
 		return false;
 	}
-
-	// finds a path to the edge of the board from the new move described in gs
-	private boolean pathfind(Point startPath, GameState gs, ScoreBoard sb, int currentPlayer) {
-		byte[][] explored = new byte[boardSize][boardSize];
-		byte[][] scoreMap = sb.getBoard();
-
-		boolean captures = false;
-
-		//start pathfinding
-		int i,j;
-		
-		GameMove move = gs.getMove();
-		
-		// stores variable length lists of possible next cells
-		HashMap<Integer, ArrayList<PointPair>> potentialMoves = 
-				new HashMap<Integer, ArrayList<PointPair>>(sb.getMaxScore() + 1);
-
-		for (int a = 0; a <= sb.getMaxScore(); a++) {
-			potentialMoves.put(a, new ArrayList<PointPair>());
-		}
-
-		// list of p cells that have been pathed to, if no path to edge is
-		// found all cells in list are captured
-		ArrayList<Point> exploredList = new ArrayList<Point>();
-
-		// make sure start point is on board
-		if (!onBoard(startPath)) {
-			return false;
-		}
-
-		//check if already at edge
-		if (onEdge(startPath)) {
-			return false;
-		}
-
-		//add cell to explored list, all necessary checks are done
-		exploredList.add(startPath);
-		explored[startPath.y][startPath.x] = 1;
-
-		Point currCell = startPath;
-
-		for(i = -1; i <= 1; i++) {
-			for(j = -1; j <= 1; j++) {
-				if((i != 0) || (j != 0)) {	// not current cell
-					int newRow = (int)currCell.getY() + i;
-					int newCol = (int)currCell.getX() + j;
-					Point nextCell = new Point(newCol, newRow);
-					if (onBoard(nextCell) &&
-							(board[nextCell.y][nextCell.x]) != move.getPlayer()) {
-
-						int cellScore = sb.getValue(nextCell);
-
-						PointPair newPointPair = new PointPair(nextCell,
-								currCell);
-						potentialMoves.get(cellScore).add(newPointPair);
-						explored[nextCell.y][nextCell.x] = 1;
-
-					}
-				}
-			}
-		}
-
-		// end initial cell check
-
-		boolean exhausted = false;
-
-		while(!exhausted) {
-			exhausted = true;
-			outerloop:
-				// start looking at highest scoring possibles
-				for(i = sb.getMaxScore(); i >= 0; i--) {
-					// is possible point of score i available?
-					if(!potentialMoves.get(i).isEmpty()) {
-						exhausted = false;
-
-						int listLength = potentialMoves.get(i).size();
-						for(j = 0; j < listLength; j++){
-
-							// there are moves with score i to try
-							PointPair nextTry = potentialMoves.get(i).get(j);
-
-							Point newCell  = nextTry.getNewCell();
-							Point prevCell = nextTry.getPrevCell();
-
-							//check that cell can be moved to
-							if(board[newCell.y][newCell.x] ==
-									move.getPlayer()) {
-								potentialMoves.get(i).remove(j);
-								j -= 1;
-								listLength -= 1;
-								continue;
-							}
-
-							// if diagonal check for adjacents
-							if((Math.abs(newCell.x - prevCell.x) +
-									Math.abs(newCell.y - prevCell.y)) == 2) {
-								int ownerCellX, ownerCellY;
-
-								ownerCellX = board[newCell.y][prevCell.x];
-								ownerCellY = board[prevCell.y][newCell.x];
-
-								// Cannot path to cell if both mutual adjacent
-								// cells are player owned
-								if((ownerCellX == move.getPlayer()) && 
-										(ownerCellY == move.getPlayer())) {
-									explored[newCell.y][newCell.x] = 0;
-									potentialMoves.get(i).remove(j);
-									j -= 1;
-									listLength -= 1;
-									continue;
-								}
-							}
-
-							// else can use cell to check
-							exploredList.add(newCell);
-
-							// Are we at one of the edge nodes?
-							if(onEdge(newCell.x, newCell.y)){
-								return false; // no new cells in capture list
-							}
-
-							//else add surrounding cells to potentialMoves
-
-							currCell = newCell;
-							exhausted = false;
-							for (int k = -1; k <= 1; k++) {
-								for (int l = -1; l <= 1; l++) {
-									if ((k != 0) || (l != 0)) {	// not current
-										int newRow = (int)currCell.getY() + k;
-										int newCol = (int)currCell.getX() + l;
-										newCell = new Point(newCol, newRow);
-										if(onBoard(newCell) &&
-												(explored[newRow][newCol] == 0
-												&& (board[newRow][newCol] !=
-													move.getPlayer()))) {
-
-											int cellScore =
-													scoreMap[newRow][newCol];
-
-											PointPair newPointPair =
-													new PointPair(newCell,
-															currCell);
-											potentialMoves.get(cellScore).
-												add(newPointPair);
-
-											explored[newCell.y][newCell.x]=1;
-
-										}
-									}
-								}
-							}
-							potentialMoves.get(i).remove(j);
-							break outerloop; // go back to start of potMoves
-						}
-					}
-				}
-		}
-		
-		// cells can be added to the captures
-		while(!exploredList.isEmpty()) {
-			int x = exploredList.get(0).x;
-			int y = exploredList.get(0).y;
-
-			GameMove newCap = new GameMove(move.getPlayer(), x, y);
-
-			//captureCell(newCap);
-			captures = true;
-			
-			exploredList.remove(0);
-			
-			gs.incrementCapture(currentPlayer);
-
-			// was capture made by player? (not opponent)
-			boolean playerCapture = (move.getPlayer() == currentPlayer);
-			//Node.setCaptureDifference(playerCapture);
-		}
-
-		return captures;
-	}
-
+	
 	// changes a cell to its captured form if valid
 	// + to -
 	// B to b
 	// W to w
-	private void captureCell(GameMove move, Point cell){
+	private void captureCell(GameMove move, Point cell) {
 		int y = cell.y;
 		int x = cell.x;
 		int player = move.getPlayer();
@@ -609,7 +429,7 @@ public class Board {
 		return tBoard;
 	}
 
-	// transforms the board for simialr state detection
+	// transforms the board for similar state detection
 	private Board transformFlipVertical() {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
@@ -620,7 +440,7 @@ public class Board {
 		return tBoard;
 	}
 
-	// transforms the board for simialr state detection
+	// transforms the board for similar state detection
 	private Board transformFlipHorizontal() {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
@@ -631,7 +451,7 @@ public class Board {
 		return tBoard;
 	}
 
-	// transforms the board for simialr state detection
+	// transforms the board for similar state detection
 	private Board transformFlipMajorDiagonal() {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
@@ -642,7 +462,7 @@ public class Board {
 		return tBoard;
 	}
 
-	// transforms the board for simialr state detection
+	// transforms the board for similar state detection
 	private Board transformFlipMinorDiagonal() {
 		Board tBoard = new Board(boardSize);
 		for (int j = 0; j < boardSize; j++) {
@@ -662,6 +482,10 @@ public class Board {
 			}
 			System.out.println();
 		}
+	}
+
+	public byte[] getCaptures() {
+		return captures;
 	}
 
 }

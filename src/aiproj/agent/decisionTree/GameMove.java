@@ -1,8 +1,6 @@
 package aiproj.agent.decisionTree;
 
-import aiproj.agent.board.Board;
 import aiproj.squatter.Move;
-import aiproj.squatter.Piece;
 
 /**
  * stores the features of a move made in the game 

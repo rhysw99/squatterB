@@ -120,36 +120,26 @@ public class Dummy implements Player, Piece {
 		return SUCCESS;
 	}
 	
-	//
 	public int getWinner() {
-	//TODO
-		/* This function when called by referee should return the winner
-		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD
-		 *	respectively.
-		 */
-		
 		if (!mainBoard.isFull()) {
 			return Piece.EMPTY;
 		}
-		int[] pieces = new int[6];
-		
+
 		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
 				int v = mainBoard.getValueAtPosition(i, j);
-					if (v < 0) {
-						return Piece.INVALID;
-					}
-				pieces[mainBoard.getValueAtPosition(i, j)]++;
+				if (v < 0) {
+					return Piece.INVALID;
+				}
 			}
 		}
-		
-		// TODO CHANGE THIS!
-		// TODO use gamestate knowledge of captures to compute winner
-		
-		if (pieces[Cell.BLACK_CAP] > pieces[Cell.WHITE_CAP]) {
-			return Piece.WHITE;
-		} else if (pieces[Cell.WHITE_CAP] > pieces[Cell.BLACK_CAP]) {
+
+		byte[] captures = mainBoard.getCaptures();
+
+		if (captures[Cell.BLACK] > captures[Cell.WHITE]) {
 			return Piece.BLACK;
+		} else if (captures[Cell.WHITE] > captures[Cell.BLACK]) {
+			return Piece.WHITE;
 		} else {
 			return Piece.DEAD;
 		}
@@ -169,137 +159,10 @@ public class Dummy implements Player, Piece {
 		
 	}
 	
-	public Node<GameState> DLSBuildAB(Tree<GameState> tree, Node<GameState> node,
-			int maxDepth, Board pBoard, int a, int b) {
-		if (maxDepth <= 0 || 
-				node.getData().getDepth() == mainBoard.getFreeSpaces()) {
-			//System.out.println("testing node: ");
-			pBoard.checkCaptures(node.getData(), scoreBoard, currentPlayer);
-			//pBoard.printBoard();
-			Scoring.scoreState(node, pBoard, currentPlayer);
-			pBoard = null;
-			if (node.getData().getScore() > 0) {
-				//System.out.println("Score: "+node.getData().getScore());
-			}
-			return node;
-		}
-			
-		int p;		
-		if (node.getData().getMove() != null) {
-			p = node.getData().getMove().getPlayer();
-			p = (p == Cell.WHITE) ? Cell.BLACK : Cell.WHITE;
-		} else {
-			p = playerID;
-		}
-		
-		boolean maximizingPlayer = (p == playerID);
-		
-		/* Set board with all parent moves */
-		Node<GameState> parentNode = node;
-		while (parentNode != null) {
-			if (parentNode.getData() != null) {
-				if (parentNode.getData().getMove() != null) {
-					pBoard.setCell(parentNode.getData().getMove());
-				}
-			}
-			parentNode = parentNode.getParent();
-		}
-
-		Board tBoard = Board.copy(pBoard);
-		
-		GameState bestGS = new GameState(null, null);
-		Node<GameState> best = new Node<GameState>(bestGS, null);
-		if (maximizingPlayer)
-			best.getData().setScore(Integer.MIN_VALUE);
-		else
-			best.getData().setScore(Integer.MAX_VALUE);
-
-		
-		for (int k = cellProbabilities.length-1; k >= 0; k--) {
-			int j = cellProbabilities[k].getY();
-			int i = cellProbabilities[k].getX();
-			//System.out.println("Max depth: "+maxDepth);
-			//System.out.println("@@@@@@@@");
-			//pBoard.printBoard();
-			if (pBoard.isLegal(i, j)) {
-				if (tBoard == null) {
-					//System.out.println("Cloning");
-					tBoard = Board.copy(pBoard);
-				}
-				tBoard.setCell(i, j, (byte) p);
-			
-				GameMove gm = new GameMove(p, i, j);
-				GameState gs = new GameState(node.getData(), gm);
-				Node<GameState> newNode = new Node<GameState>(gs, node);
-				newNode.getData().setDepth(node.getData().getDepth()+1);
-				boolean captures = tBoard.checkCaptures(gs, scoreBoard, currentPlayer);
-				
-				//System.out.println("=========");
-				//tBoard.printBoard();
-			
-				/* alpha beta pruning */
-				if (maximizingPlayer) {
-					Node<GameState> child = DLSBuildAB(tree, newNode, maxDepth-1,
-							tBoard, a, b);
-					best = (child.getData().getScore() > best.getData().getScore())
-							? child : best;
-					a = (a > best.getData().getScore()) ? a:best.getData().getScore();
-					if (b <= a) {
-						//System.out.println("pruned - a: "+ a + " - b: "+b);
-						break;
-					}
-				} else {
-					Node<GameState> child = DLSBuildAB(tree, newNode, maxDepth-1,
-							tBoard, a, b);
-					best = (child.getData().getScore() < best.getData().getScore()) ? child : best;
-					b = (b < best.getData().getScore()) ? b : best.getData().getScore();
-					if (b <= a) {
-						//System.out.println("pruned - a: "+ a + " - b: "+b);
-						break;
-					}
-				}
-				
-				if (captures) {
-					tBoard = null;
-				}				
-				if (newNode.getData().getDepth() == 1) {
-					tree.getRoot().getChildren().add(newNode);
-				}
-				if (tBoard != null) {
-					tBoard.resetCell(i, j, (byte) p);
-				}
-
-			}
-		}
-		/* Reset parent board to original state */
-		parentNode = node;
-		while (parentNode != null) {
-			if (parentNode.getData() != null) {
-				if (parentNode.getData().getMove() != null) {
-					pBoard.resetCell(parentNode.getData().getMove());
-				}
-			}
-			parentNode = parentNode.getParent();
-		}
-		
-		node.getData().setScore(best.getData().getScore());
-		
-		return best;
-	}
-	
-	public void generateZobristKeys(TreeSet<Long> l, Board b) {
-		for (int i = 0 ; i < 7; i++) {
-			Board t = b.transform(i);
-			long key = t.hashKey();
-			if (!l.contains(key)) {
-				l.add(key);
-			}
-		}
-	}
 	
 	public void makeMove(GameState gs) {
 		mainBoard.setCell(gs.getMove());
-		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer);
+		mainBoard.checkCaptures(gs, scoreBoard, currentPlayer, true);
 		
 		GameMove m = gs.getMove();
 		int x = m.getX();

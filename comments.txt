@@ -12,7 +12,7 @@ Operation of code
 		minimax
 			scoring heuristic
 			called only on player moves
-			alpha-beta?
+			alpha-beta
 	
 	
 	duplicate finding
@@ -117,11 +117,11 @@ Operation of code
 		6x6 Board cell scores						7x7 Board cell scores
 		
 		4 4 4 4 4 4 									5 5 5 5 5 5 5
-		4 3 2 2 3 4 									5 4 3 2 3 4 5
-		4 2 1 1 2 4 									5 3 2 1 2 3 5
-		4 2 1 1 2 4 									5 2 1 0 1 2 5
-		4 3 2 2 3 4 									5 3 2 1 2 3 5
-		4 4 4 4 4 4 									5 4 3 2 3 4 5
+		4 3 3 3 3 4 									5 4 4 4 4 4 5
+		4 3 2 2 3 4 									5 4 3 3 3 4 5
+		4 3 2 2 3 4 									5 4 3 0 3 4 5
+		4 3 3 3 3 4 									5 4 3 3 3 4 5
+		4 4 4 4 4 4 									5 4 4 4 4 4 5
 		             									5 5 5 5 5 5 5
 		
 		Best-first then prioritizes which cell to move to next based on the highest score.
@@ -161,10 +161,16 @@ Operation of code
 		section can be reached by each other performing a pathfind for each cell would be wasteful.
 		
 		
+		Tree building
+		============
+		Zobrist hashing was implemented, but ultimately removed due to the high memory costs, even when using a transposition table.
+		Zobrist hashing seemed to work very well, however with the incredibly limited memory space you couldn't hold enough keys in storage
+		for it to be worth the time and space.
+		
+		Ultimately we went with a alpha beta pruning algorithm.  After every move the board is evaluated to see which moves are most likely
+		to be the most useful, and this ordering is fed to the tree building algorithm to hopefully achieve O(b^(d/2)).
+		
+		The ordering of the moves also helps to determine known patterns for guaranteed captures by the oppponent and tries to minimise them.
 		
 		
 		
-		
-		
-		
-	

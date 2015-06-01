@@ -4,7 +4,7 @@ package aiproj.agent;
 /**
  * 
  */
-public class ProbabilityCell implements Comparable {
+public class ProbabilityCell implements Comparable<Object> {
 	
 	private float probability;
 	private int x;
