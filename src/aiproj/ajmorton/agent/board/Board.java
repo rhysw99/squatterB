@@ -1,10 +1,16 @@
-package aiproj.agent.board;
+package aiproj.ajmorton.agent.board;
 
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
-import aiproj.agent.Cell;
-import aiproj.agent.Misc;
-import aiproj.agent.decisionTree.GameMove;
-import aiproj.agent.decisionTree.GameState;
+import aiproj.ajmorton.agent.Cell;
+import aiproj.ajmorton.agent.Misc;
+import aiproj.ajmorton.agent.decisionTree.GameMove;
+import aiproj.ajmorton.agent.decisionTree.GameState;
 import aiproj.squatter.Piece;
 
 import java.awt.Point;

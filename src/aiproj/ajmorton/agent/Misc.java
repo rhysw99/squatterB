@@ -1,10 +1,20 @@
-package aiproj.agent;
+package aiproj.ajmorton.agent;
+
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
 import java.awt.Point;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Map.Entry;
@@ -49,11 +59,23 @@ public class Misc {
 	}
 	
 	// http://stackoverflow.com/questions/109383/how-to-sort-a-mapkey-value-on-the-values-in-java
-	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue( Map<K, V> map ) {
-		Map<K,V> result = new LinkedHashMap<>();
-		Stream <Entry<K,V>> st = map.entrySet().stream();
+	public static <K, V extends Comparable<? super V>>
+		Map<K, V> sortByValue( Map<K, V> map ) {
+		List<Map.Entry<K, V>> list = new LinkedList<>( map.entrySet() );
+		Collections.sort( list, new Comparator<Map.Entry<K, V>>()
+				{
+			@Override
+			public int compare( Map.Entry<K, V> o1, Map.Entry<K, V> o2 )
+			{
+				return (o1.getValue()).compareTo( o2.getValue() );
+			}
+				} );
 
-		st.sorted(Comparator.comparing(e -> e.getValue())).forEach(e ->result.put(e.getKey(),e.getValue()));
+		Map<K, V> result = new LinkedHashMap<>();
+		for (Map.Entry<K, V> entry : list)
+		{
+			result.put( entry.getKey(), entry.getValue() );
+		}
 		return result;
 	}
 

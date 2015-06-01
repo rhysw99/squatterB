@@ -1,9 +1,12 @@
-package aiproj.agent;
+package aiproj.ajmorton.agent;
 
-//TODO comment
-/**
- * 
- */
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
+
 public class ProbabilityCell implements Comparable<Object> {
 	
 	private float probability;

@@ -1,26 +1,29 @@
-package aiproj.agent;
+package aiproj.ajmorton.agent;
 
-// TODO remove from final product
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
 import java.awt.Point;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Scanner;
 import java.util.TreeSet;
 
-import aiproj.agent.board.*;
-import aiproj.agent.decisionTree.*;
-import aiproj.agent.decisionTree.Tree.*;
+import aiproj.ajmorton.agent.board.Board;
+import aiproj.ajmorton.agent.board.ScoreBoard;
+import aiproj.ajmorton.agent.decisionTree.GameMove;
+import aiproj.ajmorton.agent.decisionTree.GameState;
+import aiproj.ajmorton.agent.decisionTree.Tree.*;
 import aiproj.squatter.*;
 
-public class Human implements Player, Piece {
+public class Dummy implements Player, Piece {
 	
 	public static final int FAILURE = -1;
 	public static final int SUCCESS = 0;
@@ -38,8 +41,6 @@ public class Human implements Player, Piece {
 	private ScoreBoard scoreBoard;
 	
 	private ProbabilityCell[] cellProbabilities;
-	
-	private BufferedReader br;
 	
 	// done
 	public int init(int n, int p) {
@@ -65,8 +66,6 @@ public class Human implements Player, Piece {
 		this.mainBoard = new Board((byte) n);
 		this.scoreBoard = new ScoreBoard((byte) n);
 		
-		br = new BufferedReader(new InputStreamReader(System.in));
-		
 		cellProbabilities = new ProbabilityCell[n*n];
 		for (int j = 0; j < n; j++) {
 			for (int i = 0; i < n; i++) {
@@ -82,19 +81,15 @@ public class Human implements Player, Piece {
 	}
 
 	
-	public Move makeMove() {		
-		String line = null;
-		try {
-			line = br.readLine();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	public Move makeMove() {
+		GameMove gm = null;
+		while (gm == null) {
+			int x = (int) Math.round(Math.random()*mainBoard.getBoardSize());
+			int y = (int) Math.round(Math.random()*mainBoard.getBoardSize());
+			if (mainBoard.isLegal(x, y)) {
+				gm = new GameMove(playerID, x, y);	
+			}
 		}
-		String[] data = line.split(",");
-		int x = Integer.parseInt(data[0])-1;
-		int y = Integer.parseInt(data[1])-1;
-		
-		GameMove gm = new GameMove(playerID, x, y);
 		
 		GameState gs = new GameState(null, gm);
 		
@@ -132,29 +127,22 @@ public class Human implements Player, Piece {
 		return SUCCESS;
 	}
 	
-	//
 	public int getWinner() {
-	//TODO
-		/* This function when called by referee should return the winner
-		 *	Return -1, 0, 1, 2, 3 for INVALID, EMPTY, WHITE, BLACK, DEAD
-		 *	respectively.
-		 */
-		
 		if (!mainBoard.isFull()) {
 			return Piece.EMPTY;
 		}
-		
+
 		for (int j = 0; j < mainBoard.getBoardSize(); j++) {
 			for (int i = 0; i < mainBoard.getBoardSize(); i++) {
 				int v = mainBoard.getValueAtPosition(i, j);
-					if (v < 0) {
-						return Piece.INVALID;
-					}
+				if (v < 0) {
+					return Piece.INVALID;
+				}
 			}
 		}
-		
+
 		byte[] captures = mainBoard.getCaptures();
-		
+
 		if (captures[Cell.BLACK] > captures[Cell.WHITE]) {
 			return Piece.BLACK;
 		} else if (captures[Cell.WHITE] > captures[Cell.BLACK]) {
@@ -178,15 +166,6 @@ public class Human implements Player, Piece {
 		
 	}
 	
-	public void generateZobristKeys(TreeSet<Long> l, Board b) {
-		for (int i = 0 ; i < 7; i++) {
-			Board t = b.transform(i);
-			long key = t.hashKey();
-			if (!l.contains(key)) {
-				l.add(key);
-			}
-		}
-	}
 	
 	public void makeMove(GameState gs) {
 		mainBoard.setCell(gs.getMove());

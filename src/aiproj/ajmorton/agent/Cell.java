@@ -1,5 +1,11 @@
-package aiproj.agent;
+package aiproj.ajmorton.agent;
 
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
 /**
  *Defines the constants associated with each possible cell state on the board.

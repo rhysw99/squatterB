@@ -1,4 +1,11 @@
-package aiproj.agent.board;
+package aiproj.ajmorton.agent.board;
+
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
 import java.awt.Point;
 

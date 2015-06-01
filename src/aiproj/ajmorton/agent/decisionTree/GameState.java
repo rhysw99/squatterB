@@ -1,5 +1,11 @@
-package aiproj.agent.decisionTree;
+package aiproj.ajmorton.agent.decisionTree;
 
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
 /** 
  * contains metadata about the current node in the decision tree it is stored in

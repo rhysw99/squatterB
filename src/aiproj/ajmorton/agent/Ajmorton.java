@@ -1,11 +1,11 @@
-package aiproj.agent;
+package aiproj.ajmorton.agent;
 
-// TODO
-// move Scoring to correct location (find where that is)
-// pathfind still needs to update capDifference, need to pass reference to
-// fill out comments.txt
-// do we use alpha beta?
-// scoreMap for 6x6 is likely wrong
+/** 
+2  * COMP30024 Artificial Intelligence 
+3  * Project B
+4  * ajmorton Andrew Morton 522139  
+5  * rhysw    Rhys Williams 661561 
+6  */ 
 
 import java.awt.Point;
 import java.io.PrintStream;
@@ -14,9 +14,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-import aiproj.agent.board.*;
-import aiproj.agent.decisionTree.*;
-import aiproj.agent.decisionTree.Tree.*;
+import aiproj.ajmorton.agent.board.Board;
+import aiproj.ajmorton.agent.board.ScoreBoard;
+import aiproj.ajmorton.agent.decisionTree.GameMove;
+import aiproj.ajmorton.agent.decisionTree.GameState;
+import aiproj.ajmorton.agent.decisionTree.Tree;
+import aiproj.ajmorton.agent.decisionTree.Tree.*;
 import aiproj.squatter.*;
 
 /**
